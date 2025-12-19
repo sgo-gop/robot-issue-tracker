@@ -24,7 +24,7 @@ export const useIssues = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('issues')
-        .select(`*, stations (id, name), profiles (id, email, full_name)`)
+        .select(`*, stations (id, name)`)
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data;

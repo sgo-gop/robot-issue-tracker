@@ -1,0 +1,240 @@
+import { useState } from 'react';
+import { format } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Issue, IssueStatus } from '@/types/database';
+import { useStations } from '@/hooks/useStations';
+import { FileDown, CalendarIcon, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+interface PDFReportProps {
+  issues: Issue[];
+}
+
+export const PDFReport = ({ issues }: PDFReportProps) => {
+  const { stations } = useStations();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<IssueStatus | 'all'>('all');
+  const [stationFilter, setStationFilter] = useState<string>('all');
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+
+  const filteredIssues = issues.filter((issue) => {
+    const matchesStatus = statusFilter === 'all' || issue.status === statusFilter;
+    const matchesStation = stationFilter === 'all' || issue.station_id === stationFilter;
+    const issueDate = new Date(issue.created_at);
+    const matchesStart = !startDate || issueDate >= startDate;
+    const matchesEnd = !endDate || issueDate <= endDate;
+    return matchesStatus && matchesStation && matchesStart && matchesEnd;
+  });
+
+  const generatePDF = async () => {
+    setIsGenerating(true);
+
+    // Create HTML content for print
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Issue Report - ${format(new Date(), 'yyyy-MM-dd')}</title>
+        <style>
+          * { font-family: 'Arial', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+          body { padding: 40px; color: #1a1a1a; }
+          .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #e5e5e5; padding-bottom: 20px; }
+          .header h1 { font-size: 24px; margin-bottom: 8px; }
+          .header p { color: #666; font-size: 14px; }
+          .summary { display: flex; gap: 20px; margin-bottom: 30px; }
+          .summary-card { flex: 1; background: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center; }
+          .summary-card h3 { font-size: 24px; color: #1a1a1a; }
+          .summary-card p { font-size: 12px; color: #666; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e5e5; font-size: 12px; }
+          th { background: #f5f5f5; font-weight: 600; }
+          .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+          .priority-critical { background: #fef2f2; color: #dc2626; }
+          .priority-high { background: #fff7ed; color: #ea580c; }
+          .priority-medium { background: #fefce8; color: #ca8a04; }
+          .priority-low { background: #f0fdf4; color: #16a34a; }
+          .status-open { background: #dbeafe; color: #2563eb; }
+          .status-closed { background: #f3f4f6; color: #6b7280; }
+          .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #666; }
+          @media print { body { padding: 20px; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Robot Testing Issue Report</h1>
+          <p>Generated on ${format(new Date(), 'MMMM d, yyyy \'at\' h:mm a')}</p>
+          ${startDate || endDate ? `<p>Date range: ${startDate ? format(startDate, 'MMM d, yyyy') : 'Start'} - ${endDate ? format(endDate, 'MMM d, yyyy') : 'Present'}</p>` : ''}
+        </div>
+        
+        <div class="summary">
+          <div class="summary-card">
+            <h3>${filteredIssues.length}</h3>
+            <p>Total Issues</p>
+          </div>
+          <div class="summary-card">
+            <h3>${filteredIssues.filter(i => i.status === 'open').length}</h3>
+            <p>Open Issues</p>
+          </div>
+          <div class="summary-card">
+            <h3>${filteredIssues.filter(i => i.status === 'closed').length}</h3>
+            <p>Closed Issues</p>
+          </div>
+          <div class="summary-card">
+            <h3>${filteredIssues.filter(i => i.priority === 'critical' || i.priority === 'high').length}</h3>
+            <p>High Priority</p>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Title</th>
+              <th>Priority</th>
+              <th>Status</th>
+              <th>Category</th>
+              <th>Station</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filteredIssues.map(issue => `
+              <tr>
+                <td>${issue.issue_number}</td>
+                <td>${issue.title}</td>
+                <td><span class="badge priority-${issue.priority}">${issue.priority.toUpperCase()}</span></td>
+                <td><span class="badge status-${issue.status}">${issue.status.toUpperCase()}</span></td>
+                <td>${issue.category}</td>
+                <td>${issue.stations?.name || '-'}</td>
+                <td>${format(new Date(issue.created_at), 'MMM d, yyyy')}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <div class="footer">
+          <p>Robot Testing Issue Tracker • Confidential</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Open print window
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      printWindow.onload = () => {
+        printWindow.print();
+      };
+    }
+
+    setIsGenerating(false);
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Generate Report</CardTitle>
+        <CardDescription>Export filtered issues as a PDF report</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label>Status</Label>
+            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as IssueStatus | 'all')}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="open">Open Only</SelectItem>
+                <SelectItem value="closed">Closed Only</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Station</Label>
+            <Select value={stationFilter} onValueChange={setStationFilter}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Stations</SelectItem>
+                {stations.map((station) => (
+                  <SelectItem key={station.id} value={station.id}>
+                    {station.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Start Date</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    'w-full justify-start text-left font-normal',
+                    !startDate && 'text-muted-foreground'
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {startDate ? format(startDate, 'PPP') : 'Pick a date'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar mode="single" selected={startDate} onSelect={setStartDate} initialFocus />
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <div className="space-y-2">
+            <Label>End Date</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    'w-full justify-start text-left font-normal',
+                    !endDate && 'text-muted-foreground'
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {endDate ? format(endDate, 'PPP') : 'Pick a date'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar mode="single" selected={endDate} onSelect={setEndDate} initialFocus />
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
+
+        <div className="rounded-md bg-muted p-4">
+          <p className="text-sm text-muted-foreground">
+            {filteredIssues.length} issue{filteredIssues.length !== 1 ? 's' : ''} match your filters
+          </p>
+        </div>
+
+        <Button onClick={generatePDF} disabled={isGenerating || filteredIssues.length === 0} className="w-full">
+          {isGenerating ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <FileDown className="mr-2 h-4 w-4" />
+          )}
+          Generate PDF Report
+        </Button>
+      </CardContent>
+    </Card>
+  );
+};
