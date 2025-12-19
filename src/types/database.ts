@@ -6,7 +6,7 @@ export type AppRole = 'tester' | 'developer';
 export interface Station {
   id: string;
   name: string;
-  created_at: string;
+  created_at?: string;
 }
 
 export interface Issue {
@@ -25,8 +25,7 @@ export interface Issue {
   created_at: string;
   updated_at: string;
   closed_at: string | null;
-  stations?: Station;
-  profiles?: Profile;
+  stations?: { id: string; name: string } | null;
 }
 
 export interface IssueAttachment {
@@ -39,9 +38,9 @@ export interface IssueAttachment {
 
 export interface Profile {
   id: string;
-  email: string | null;
-  full_name: string | null;
-  created_at: string;
+  email?: string | null;
+  full_name?: string | null;
+  created_at?: string;
 }
 
 export interface UserRole {
