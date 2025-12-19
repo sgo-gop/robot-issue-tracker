@@ -8,6 +8,7 @@ import { IssueChart } from '@/components/dashboard/IssueChart';
 import { IssueForm } from '@/components/issues/IssueForm';
 import { IssueTable } from '@/components/issues/IssueTable';
 import { PDFReport } from '@/components/reports/PDFReport';
+import { ClearAllIssues } from '@/components/admin/ClearAllIssues';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -138,9 +139,12 @@ const Index = () => {
 
         <TabsContent value="manage" className="space-y-6">
           <Card>
-            <CardHeader>
-              <CardTitle>All Issues</CardTitle>
-              <CardDescription>View and manage all reported issues</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>All Issues</CardTitle>
+                <CardDescription>View and manage all reported issues</CardDescription>
+              </div>
+              <ClearAllIssues />
             </CardHeader>
             <CardContent>
               {issuesLoading ? (
