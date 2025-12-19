@@ -1,18 +1,25 @@
 import { ReactNode } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useSession } from '@/hooks/useSession';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Bot, LogOut, User } from 'lucide-react';
+import { Bot, LogOut, MapPin } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface DashboardLayoutProps {
   children: ReactNode;
 }
 
 export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
-  const { user, role, signOut } = useAuth();
+  const { user, clearSession } = useSession();
+  const navigate = useNavigate();
 
-  const initials = user?.email?.slice(0, 2).toUpperCase() || 'U';
+  const initials = user?.name?.slice(0, 2).toUpperCase() || 'U';
+
+  const handleSignOut = () => {
+    clearSession();
+    navigate('/auth');
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -24,7 +31,10 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             </div>
             <div>
               <h1 className="text-lg font-semibold">Robot Testing Tracker</h1>
-              <p className="text-xs text-muted-foreground capitalize">{role || 'User'} Dashboard</p>
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <MapPin className="h-3 w-3" />
+                {user?.stationName || 'No Station'}
+              </p>
             </div>
           </div>
 
@@ -39,14 +49,14 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{user?.email}</p>
-                  <p className="text-xs leading-none text-muted-foreground capitalize">{role}</p>
+                  <p className="text-sm font-medium leading-none">{user?.name}</p>
+                  <p className="text-xs leading-none text-muted-foreground">{user?.stationName}</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive">
+              <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
                 <LogOut className="mr-2 h-4 w-4" />
-                Sign out
+                End Session
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
