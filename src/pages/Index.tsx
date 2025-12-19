@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useSession } from '@/hooks/useSession';
 import { useIssues } from '@/hooks/useIssues';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { StatsCard } from '@/components/dashboard/StatsCard';
@@ -15,25 +15,14 @@ import { AlertCircle, CheckCircle2, Clock, AlertTriangle, LayoutDashboard, PlusC
 
 const Index = () => {
   const navigate = useNavigate();
-  const { user, role, loading: authLoading } = useAuth();
+  const { user } = useSession();
   const { issues, isLoading: issuesLoading, closeIssue, isClosing } = useIssues();
 
   useEffect(() => {
-    if (!authLoading && !user) {
+    if (!user) {
       navigate('/auth');
     }
-  }, [user, authLoading, navigate]);
-
-  if (authLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="space-y-4 text-center">
-          <Skeleton className="h-12 w-12 rounded-full mx-auto" />
-          <Skeleton className="h-4 w-32 mx-auto" />
-        </div>
-      </div>
-    );
-  }
+  }, [user, navigate]);
 
   if (!user) return null;
 
@@ -62,32 +51,26 @@ const Index = () => {
     { name: 'Other', value: issues.filter((i) => i.category === 'other').length, color: 'hsl(215, 14%, 34%)' },
   ].filter((d) => d.value > 0);
 
-  const isDeveloper = role === 'developer';
-
   return (
     <DashboardLayout>
       <Tabs defaultValue="dashboard" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
           <TabsTrigger value="dashboard" className="gap-2">
             <LayoutDashboard className="h-4 w-4" />
-            Dashboard
+            <span className="hidden sm:inline">Dashboard</span>
           </TabsTrigger>
           <TabsTrigger value="report" className="gap-2">
             <PlusCircle className="h-4 w-4" />
-            Report Issue
+            <span className="hidden sm:inline">Report Issue</span>
           </TabsTrigger>
-          {isDeveloper && (
-            <>
-              <TabsTrigger value="manage" className="gap-2">
-                <Settings className="h-4 w-4" />
-                Manage Issues
-              </TabsTrigger>
-              <TabsTrigger value="reports" className="gap-2">
-                <FileText className="h-4 w-4" />
-                Reports
-              </TabsTrigger>
-            </>
-          )}
+          <TabsTrigger value="manage" className="gap-2">
+            <Settings className="h-4 w-4" />
+            <span className="hidden sm:inline">All Issues</span>
+          </TabsTrigger>
+          <TabsTrigger value="reports" className="gap-2">
+            <FileText className="h-4 w-4" />
+            <span className="hidden sm:inline">Reports</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard" className="space-y-6">
@@ -153,40 +136,36 @@ const Index = () => {
           </div>
         </TabsContent>
 
-        {isDeveloper && (
-          <>
-            <TabsContent value="manage" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>All Issues</CardTitle>
-                  <CardDescription>View and manage all reported issues</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {issuesLoading ? (
-                    <div className="space-y-3">
-                      {[...Array(10)].map((_, i) => (
-                        <Skeleton key={i} className="h-12 w-full" />
-                      ))}
-                    </div>
-                  ) : (
-                    <IssueTable
-                      issues={issues}
-                      showActions
-                      onCloseIssue={closeIssue}
-                      isClosing={isClosing}
-                    />
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
+        <TabsContent value="manage" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>All Issues</CardTitle>
+              <CardDescription>View and manage all reported issues</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {issuesLoading ? (
+                <div className="space-y-3">
+                  {[...Array(10)].map((_, i) => (
+                    <Skeleton key={i} className="h-12 w-full" />
+                  ))}
+                </div>
+              ) : (
+                <IssueTable
+                  issues={issues}
+                  showActions
+                  onCloseIssue={closeIssue}
+                  isClosing={isClosing}
+                />
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-            <TabsContent value="reports">
-              <div className="max-w-2xl mx-auto">
-                <PDFReport issues={issues} />
-              </div>
-            </TabsContent>
-          </>
-        )}
+        <TabsContent value="reports">
+          <div className="max-w-2xl mx-auto">
+            <PDFReport issues={issues} />
+          </div>
+        </TabsContent>
       </Tabs>
     </DashboardLayout>
   );

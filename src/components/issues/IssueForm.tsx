@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useSession } from '@/hooks/useSession';
 import { useIssues, useUploadAttachment } from '@/hooks/useIssues';
 import { useStations } from '@/hooks/useStations';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,7 @@ interface IssueFormProps {
 }
 
 export const IssueForm = ({ onSuccess }: IssueFormProps) => {
-  const { user } = useAuth();
+  const { user } = useSession();
   const { createIssue, isCreating } = useIssues();
   const { stations } = useStations();
   const uploadAttachment = useUploadAttachment();
@@ -26,7 +26,7 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<IssuePriority>('medium');
   const [category, setCategory] = useState<IssueCategory>('other');
-  const [stationId, setStationId] = useState<string>('');
+  const [stationId, setStationId] = useState<string>(user?.stationId || '');
   const [stepsToReproduce, setStepsToReproduce] = useState('');
   const [expectedBehavior, setExpectedBehavior] = useState('');
   const [actualBehavior, setActualBehavior] = useState('');
@@ -47,15 +47,15 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
     if (!user) return;
 
     const issue = await createIssue({
-      title,
-      description,
+      title: title.trim(),
+      description: description.trim(),
       priority,
       category,
       station_id: stationId || null,
-      steps_to_reproduce: stepsToReproduce || undefined,
-      expected_behavior: expectedBehavior || undefined,
-      actual_behavior: actualBehavior || undefined,
-      reporter_id: user.id,
+      steps_to_reproduce: stepsToReproduce.trim() || undefined,
+      expected_behavior: expectedBehavior.trim() || undefined,
+      actual_behavior: actualBehavior.trim() || undefined,
+      reporter_id: null, // No auth user, just session name
     });
 
     // Upload attachments
@@ -68,7 +68,7 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
     setDescription('');
     setPriority('medium');
     setCategory('other');
-    setStationId('');
+    setStationId(user?.stationId || '');
     setStepsToReproduce('');
     setExpectedBehavior('');
     setActualBehavior('');
@@ -81,7 +81,9 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
     <Card>
       <CardHeader>
         <CardTitle>Report New Issue</CardTitle>
-        <CardDescription>Describe the issue you encountered during testing</CardDescription>
+        <CardDescription>
+          Reporting as <span className="font-medium">{user?.name}</span> from <span className="font-medium">{user?.stationName}</span>
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -93,6 +95,7 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
                 placeholder="Brief description of the issue"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
+                maxLength={200}
                 required
               />
             </div>
@@ -153,6 +156,7 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={4}
+              maxLength={2000}
               required
             />
           </div>
@@ -165,6 +169,7 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
               value={stepsToReproduce}
               onChange={(e) => setStepsToReproduce(e.target.value)}
               rows={3}
+              maxLength={2000}
             />
           </div>
 
@@ -177,6 +182,7 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
                 value={expectedBehavior}
                 onChange={(e) => setExpectedBehavior(e.target.value)}
                 rows={2}
+                maxLength={1000}
               />
             </div>
 
@@ -188,6 +194,7 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
                 value={actualBehavior}
                 onChange={(e) => setActualBehavior(e.target.value)}
                 rows={2}
+                maxLength={1000}
               />
             </div>
           </div>
