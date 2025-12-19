@@ -6,10 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Issue, IssueStatus } from '@/types/database';
+import { Issue, IssueStatus, IssueAttachment } from '@/types/database';
 import { useStations } from '@/hooks/useStations';
 import { FileDown, CalendarIcon, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PDFReportProps {
   issues: Issue[];
@@ -34,6 +35,28 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
 
   const generatePDF = async () => {
     setIsGenerating(true);
+
+    // Fetch attachments for all filtered issues
+    const issueIds = filteredIssues.map(issue => issue.id);
+    const { data: attachments } = await supabase
+      .from('issue_attachments')
+      .select('*')
+      .in('issue_id', issueIds);
+
+    // Group attachments by issue_id
+    const attachmentsByIssue: Record<string, IssueAttachment[]> = {};
+    (attachments || []).forEach((att) => {
+      if (!attachmentsByIssue[att.issue_id]) {
+        attachmentsByIssue[att.issue_id] = [];
+      }
+      attachmentsByIssue[att.issue_id].push(att as IssueAttachment);
+    });
+
+    // Get public URLs for all attachments
+    const getPublicUrl = (filePath: string) => {
+      const { data } = supabase.storage.from('issue-attachments').getPublicUrl(filePath);
+      return data.publicUrl;
+    };
 
     // Create HTML content for print
     const escapeHtml = (text: string | null | undefined) => {
@@ -76,6 +99,9 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
           .issue-field { }
           .issue-field-label { font-size: 10px; color: #6b7280; text-transform: uppercase; margin-bottom: 2px; }
           .issue-field-value { font-size: 12px; }
+          .attachments-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+          .attachment-img { width: 100%; height: 150px; object-fit: cover; border-radius: 4px; border: 1px solid #e5e5e5; }
+          .attachment-file { background: #f5f5f5; padding: 10px; border-radius: 4px; font-size: 11px; word-break: break-all; }
           .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #666; padding-top: 20px; border-top: 1px solid #e5e5e5; }
           @media print { 
             body { padding: 20px; } 
@@ -111,7 +137,11 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
 
         <h2 style="margin-bottom: 15px; font-size: 18px;">Issue Details</h2>
 
-        ${filteredIssues.map(issue => `
+        ${filteredIssues.map(issue => {
+          const issueAttachments = attachmentsByIssue[issue.id] || [];
+          const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
+          
+          return `
           <div class="issue-card">
             <div class="issue-header">
               <div>
@@ -165,8 +195,25 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
                 <div class="issue-section-content">${escapeHtml(issue.actual_behavior)}</div>
               </div>
             ` : ''}
+
+            ${issueAttachments.length > 0 ? `
+              <div class="issue-section">
+                <div class="issue-section-title">Attachments (${issueAttachments.length})</div>
+                <div class="attachments-grid">
+                  ${issueAttachments.map(att => {
+                    const isImage = imageExtensions.some(ext => att.file_name.toLowerCase().endsWith(ext));
+                    const url = getPublicUrl(att.file_path);
+                    if (isImage) {
+                      return `<img src="${url}" alt="${escapeHtml(att.file_name)}" class="attachment-img" />`;
+                    } else {
+                      return `<div class="attachment-file">${escapeHtml(att.file_name)}</div>`;
+                    }
+                  }).join('')}
+                </div>
+              </div>
+            ` : ''}
           </div>
-        `).join('')}
+        `}).join('')}
 
         <div class="footer">
           <p>Robot Testing Issue Tracker • Confidential • Page generated automatically</p>
