@@ -36,6 +36,11 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
     setIsGenerating(true);
 
     // Create HTML content for print
+    const escapeHtml = (text: string | null | undefined) => {
+      if (!text) return '-';
+      return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/\n/g, '<br>');
+    };
+
     const printContent = `
       <!DOCTYPE html>
       <html>
@@ -43,7 +48,7 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
         <title>Issue Report - ${format(new Date(), 'yyyy-MM-dd')}</title>
         <style>
           * { font-family: 'Arial', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
-          body { padding: 40px; color: #1a1a1a; }
+          body { padding: 40px; color: #1a1a1a; font-size: 12px; }
           .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #e5e5e5; padding-bottom: 20px; }
           .header h1 { font-size: 24px; margin-bottom: 8px; }
           .header p { color: #666; font-size: 14px; }
@@ -51,9 +56,6 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
           .summary-card { flex: 1; background: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center; }
           .summary-card h3 { font-size: 24px; color: #1a1a1a; }
           .summary-card p { font-size: 12px; color: #666; }
-          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-          th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e5e5; font-size: 12px; }
-          th { background: #f5f5f5; font-weight: 600; }
           .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
           .priority-critical { background: #fef2f2; color: #dc2626; }
           .priority-high { background: #fff7ed; color: #ea580c; }
@@ -61,8 +63,24 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
           .priority-low { background: #f0fdf4; color: #16a34a; }
           .status-open { background: #dbeafe; color: #2563eb; }
           .status-closed { background: #f3f4f6; color: #6b7280; }
-          .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #666; }
-          @media print { body { padding: 20px; } }
+          .category-badge { background: #f3e8ff; color: #7c3aed; }
+          .issue-card { border: 1px solid #e5e5e5; border-radius: 8px; padding: 20px; margin-bottom: 20px; page-break-inside: avoid; }
+          .issue-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #e5e5e5; }
+          .issue-title { font-size: 16px; font-weight: 600; margin-bottom: 5px; }
+          .issue-number { font-family: monospace; color: #666; font-size: 12px; }
+          .issue-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+          .issue-section { margin-bottom: 12px; }
+          .issue-section-title { font-weight: 600; color: #374151; margin-bottom: 4px; font-size: 11px; text-transform: uppercase; }
+          .issue-section-content { background: #f9fafb; padding: 10px; border-radius: 4px; line-height: 1.5; }
+          .issue-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 15px; }
+          .issue-field { }
+          .issue-field-label { font-size: 10px; color: #6b7280; text-transform: uppercase; margin-bottom: 2px; }
+          .issue-field-value { font-size: 12px; }
+          .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #666; padding-top: 20px; border-top: 1px solid #e5e5e5; }
+          @media print { 
+            body { padding: 20px; } 
+            .issue-card { page-break-inside: avoid; }
+          }
         </style>
       </head>
       <body>
@@ -91,35 +109,67 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
           </div>
         </div>
 
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Title</th>
-              <th>Priority</th>
-              <th>Status</th>
-              <th>Category</th>
-              <th>Station</th>
-              <th>Created</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${filteredIssues.map(issue => `
-              <tr>
-                <td>${issue.issue_number}</td>
-                <td>${issue.title}</td>
-                <td><span class="badge priority-${issue.priority}">${issue.priority.toUpperCase()}</span></td>
-                <td><span class="badge status-${issue.status}">${issue.status.toUpperCase()}</span></td>
-                <td>${issue.category}</td>
-                <td>${issue.stations?.name || '-'}</td>
-                <td>${format(new Date(issue.created_at), 'MMM d, yyyy')}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
+        <h2 style="margin-bottom: 15px; font-size: 18px;">Issue Details</h2>
+
+        ${filteredIssues.map(issue => `
+          <div class="issue-card">
+            <div class="issue-header">
+              <div>
+                <div class="issue-title">${escapeHtml(issue.title)}</div>
+                <div class="issue-number">${issue.issue_number}</div>
+                <div class="issue-meta">
+                  <span class="badge priority-${issue.priority}">${issue.priority.toUpperCase()}</span>
+                  <span class="badge status-${issue.status}">${issue.status.toUpperCase()}</span>
+                  <span class="badge category-badge">${issue.category.toUpperCase()}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="issue-grid">
+              <div class="issue-field">
+                <div class="issue-field-label">Station</div>
+                <div class="issue-field-value">${issue.stations?.name || 'Not assigned'}</div>
+              </div>
+              <div class="issue-field">
+                <div class="issue-field-label">Created</div>
+                <div class="issue-field-value">${format(new Date(issue.created_at), 'MMM d, yyyy h:mm a')}</div>
+              </div>
+              <div class="issue-field">
+                <div class="issue-field-label">${issue.status === 'closed' ? 'Closed' : 'Last Updated'}</div>
+                <div class="issue-field-value">${issue.closed_at ? format(new Date(issue.closed_at), 'MMM d, yyyy h:mm a') : format(new Date(issue.updated_at), 'MMM d, yyyy h:mm a')}</div>
+              </div>
+            </div>
+
+            <div class="issue-section">
+              <div class="issue-section-title">Description</div>
+              <div class="issue-section-content">${escapeHtml(issue.description)}</div>
+            </div>
+
+            ${issue.steps_to_reproduce ? `
+              <div class="issue-section">
+                <div class="issue-section-title">Steps to Reproduce</div>
+                <div class="issue-section-content">${escapeHtml(issue.steps_to_reproduce)}</div>
+              </div>
+            ` : ''}
+
+            ${issue.expected_behavior ? `
+              <div class="issue-section">
+                <div class="issue-section-title">Expected Behavior</div>
+                <div class="issue-section-content">${escapeHtml(issue.expected_behavior)}</div>
+              </div>
+            ` : ''}
+
+            ${issue.actual_behavior ? `
+              <div class="issue-section">
+                <div class="issue-section-title">Actual Behavior</div>
+                <div class="issue-section-content">${escapeHtml(issue.actual_behavior)}</div>
+              </div>
+            ` : ''}
+          </div>
+        `).join('')}
 
         <div class="footer">
-          <p>Robot Testing Issue Tracker • Confidential</p>
+          <p>Robot Testing Issue Tracker • Confidential • Page generated automatically</p>
         </div>
       </body>
       </html>
