@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useSession } from '@/hooks/useSession';
 import { useIssues, useUploadAttachment } from '@/hooks/useIssues';
 import { useStations } from '@/hooks/useStations';
+import { useSoftwareVersions } from '@/hooks/useSoftwareVersions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,6 +21,7 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
   const { user } = useSession();
   const { createIssue, isCreating } = useIssues();
   const { stations } = useStations();
+  const { versions } = useSoftwareVersions();
   const uploadAttachment = useUploadAttachment();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -28,6 +30,7 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
   const [priority, setPriority] = useState<IssuePriority>('medium');
   const [category, setCategory] = useState<IssueCategory>('other');
   const [stationId, setStationId] = useState<string>(user?.stationId || '');
+  const [softwareVersionId, setSoftwareVersionId] = useState<string>('');
   const [stepsToReproduce, setStepsToReproduce] = useState('');
   const [expectedBehavior, setExpectedBehavior] = useState('');
   const [actualBehavior, setActualBehavior] = useState('');
@@ -53,6 +56,7 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
       priority,
       category,
       station_id: stationId || null,
+      software_version_id: softwareVersionId || null,
       steps_to_reproduce: stepsToReproduce.trim() || undefined,
       expected_behavior: expectedBehavior.trim() || undefined,
       actual_behavior: actualBehavior.trim() || undefined,
@@ -70,6 +74,7 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
     setPriority('medium');
     setCategory('other');
     setStationId(user?.stationId || '');
+    setSoftwareVersionId('');
     setStepsToReproduce('');
     setExpectedBehavior('');
     setActualBehavior('');
@@ -134,6 +139,22 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
                   {stations.map((station) => (
                     <SelectItem key={station.id} value={station.id}>
                       {station.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="software-version">Software Version</Label>
+              <Select value={softwareVersionId} onValueChange={setSoftwareVersionId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select version" />
+                </SelectTrigger>
+                <SelectContent>
+                  {versions.map((v) => (
+                    <SelectItem key={v.id} value={v.id}>
+                      {v.version}
                     </SelectItem>
                   ))}
                 </SelectContent>

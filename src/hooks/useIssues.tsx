@@ -9,10 +9,11 @@ interface CreateIssueData {
   priority: IssuePriority;
   category: IssueCategory;
   station_id: string | null;
+  software_version_id?: string | null;
   steps_to_reproduce?: string;
   expected_behavior?: string;
   actual_behavior?: string;
-  reporter_id: string;
+  reporter_id: string | null;
 }
 
 export const useIssues = () => {
@@ -24,7 +25,7 @@ export const useIssues = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('issues')
-        .select(`*, stations (id, name)`)
+        .select(`*, stations (id, name), software_versions (id, version)`)
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data;
