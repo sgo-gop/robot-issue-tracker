@@ -47,7 +47,9 @@ serve(async (req) => {
     const results: { issueId: string; jiraKey?: string; error?: string }[] = [];
 
     const issueTypeName = 'Task';
-    const teamInput = typeof team === 'string' ? team.trim() : '';
+    // Default Team ID for NEURA project
+    const DEFAULT_TEAM_ID = 'fe36c533-9a84-4d9b-b674-68079b4c4073';
+    const teamInput = typeof team === 'string' && team.trim() ? team.trim() : DEFAULT_TEAM_ID;
 
     const TEAM_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
