@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
@@ -22,6 +23,7 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSubmittingToJira, setIsSubmittingToJira] = useState(false);
+  const [jiraTeam, setJiraTeam] = useState('');
   const [statusFilter, setStatusFilter] = useState<IssueStatus | 'all'>('all');
   const [stationFilter, setStationFilter] = useState<string>('all');
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
@@ -242,7 +244,7 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
     setIsSubmittingToJira(true);
     try {
       const { data, error } = await supabase.functions.invoke('submit-to-jira', {
-        body: { issues: filteredIssues }
+        body: { issues: filteredIssues, team: jiraTeam.trim() || null }
       });
 
       if (error) {
@@ -344,6 +346,18 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
                 <Calendar mode="single" selected={endDate} onSelect={setEndDate} initialFocus />
               </PopoverContent>
             </Popover>
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label>Jira Team</Label>
+            <Input
+              value={jiraTeam}
+              onChange={(e) => setJiraTeam(e.target.value)}
+              placeholder="Enter the Jira Team (required)"
+            />
+            <p className="text-xs text-muted-foreground">Your Jira project requires a Team field for ticket creation.</p>
           </div>
         </div>
 

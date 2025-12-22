@@ -2,6 +2,3 @@ project_id = "hfbdelswvobgqhotkghi"
 
 [functions.parse-issue-voice]
 verify_jwt = false
-
-[functions.submit-to-jira]
-verify_jwt = false
