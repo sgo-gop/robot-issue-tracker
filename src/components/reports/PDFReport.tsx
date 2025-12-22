@@ -8,9 +8,10 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Issue, IssueStatus, IssueAttachment } from '@/types/database';
 import { useStations } from '@/hooks/useStations';
-import { FileDown, CalendarIcon, Loader2 } from 'lucide-react';
+import { FileDown, CalendarIcon, Loader2, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface PDFReportProps {
   issues: Issue[];
@@ -18,7 +19,9 @@ interface PDFReportProps {
 
 export const PDFReport = ({ issues }: PDFReportProps) => {
   const { stations } = useStations();
+  const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSubmittingToJira, setIsSubmittingToJira] = useState(false);
   const [statusFilter, setStatusFilter] = useState<IssueStatus | 'all'>('all');
   const [stationFilter, setStationFilter] = useState<string>('all');
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
@@ -235,6 +238,33 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
     setIsGenerating(false);
   };
 
+  const submitToJira = async () => {
+    setIsSubmittingToJira(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('submit-to-jira', {
+        body: { issues: filteredIssues }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: 'Submitted to Jira',
+        description: data.message,
+      });
+    } catch (error) {
+      console.error('Error submitting to Jira:', error);
+      toast({
+        title: 'Error submitting to Jira',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmittingToJira(false);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -323,14 +353,29 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
           </p>
         </div>
 
-        <Button onClick={generatePDF} disabled={isGenerating || filteredIssues.length === 0} className="w-full">
-          {isGenerating ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <FileDown className="mr-2 h-4 w-4" />
-          )}
-          Generate PDF Report
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={generatePDF} disabled={isGenerating || filteredIssues.length === 0} className="flex-1">
+            {isGenerating ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <FileDown className="mr-2 h-4 w-4" />
+            )}
+            Generate PDF Report
+          </Button>
+          <Button 
+            onClick={submitToJira} 
+            disabled={isSubmittingToJira || filteredIssues.length === 0} 
+            variant="secondary"
+            className="flex-1"
+          >
+            {isSubmittingToJira ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="mr-2 h-4 w-4" />
+            )}
+            Submit to Jira
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
