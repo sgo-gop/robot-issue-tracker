@@ -97,8 +97,7 @@ serve(async (req) => {
               },
             ],
           },
-          issuetype: { name: 'Bug' },
-          priority: { name: priorityMap[issue.priority] || 'Medium' },
+          issuetype: { name: 'Task' },
           labels: [issue.category, 'lovable-import'],
         },
       };
