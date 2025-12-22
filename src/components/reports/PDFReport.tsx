@@ -251,9 +251,27 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
         throw error;
       }
 
+      if (!data) {
+        throw new Error('No response from Jira');
+      }
+
+      if (data.success === false) {
+        toast({
+          title: 'Jira needs a Team ID',
+          description: data.error || 'Please provide a valid Jira Team ID and retry.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const firstFailure = Array.isArray(data.results)
+        ? data.results.find((r: any) => r?.error)?.error
+        : null;
+
       toast({
-        title: 'Submitted to Jira',
-        description: data.message,
+        title: data.failed > 0 ? 'Jira submission finished (with errors)' : 'Submitted to Jira',
+        description: firstFailure ? `${data.message}\n\nFirst error: ${String(firstFailure).slice(0, 200)}` : data.message,
+        variant: data.failed > 0 ? 'destructive' : undefined,
       });
     } catch (error) {
       console.error('Error submitting to Jira:', error);
@@ -351,13 +369,15 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
 
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label>Jira Team</Label>
+            <Label>Jira Team ID</Label>
             <Input
               value={jiraTeam}
               onChange={(e) => setJiraTeam(e.target.value)}
-              placeholder="Enter the Jira Team (required)"
+              placeholder="Paste the Team ID (UUID) or full /team/ URL"
             />
-            <p className="text-xs text-muted-foreground">Your Jira project requires a Team field for ticket creation.</p>
+            <p className="text-xs text-muted-foreground">
+              Jira expects a Team <span className="font-mono">ID</span> (UUID). Open the Team page in Jira and copy the last part of the URL after <span className="font-mono">/team/</span>.
+            </p>
           </div>
         </div>
 

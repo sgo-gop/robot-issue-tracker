@@ -49,28 +49,34 @@ serve(async (req) => {
     const issueTypeName = 'Task';
     const teamInput = typeof team === 'string' ? team.trim() : '';
 
-    type AllowedValue = { id?: string; name?: string; value?: string };
+    const TEAM_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-    const optionToFieldValue = (opt: AllowedValue | string) => {
-      if (typeof opt === 'string') return opt;
-      if (opt.id) return { id: opt.id };
-      if (opt.value) return { value: opt.value };
-      if (opt.name) return { value: opt.name };
-      return opt;
+    const extractTeamId = (value: string): string | null => {
+      const v = value.trim();
+      if (!v) return null;
+
+      // Allow pasting a full team URL; take the last segment after /team/
+      const idx = v.toLowerCase().lastIndexOf('/team/');
+      if (idx !== -1) {
+        const after = v.slice(idx + '/team/'.length).split(/[/?#]/)[0];
+        if (TEAM_ID_RE.test(after)) return after;
+      }
+
+      if (TEAM_ID_RE.test(v)) return v;
+      return null;
     };
 
-    let teamFieldKey: string | null = null;
-    let teamAllowedValues: AllowedValue[] = [];
-    let teamFieldValue: unknown | null = null;
+    let teamFieldKey = 'customfield_10001';
+    let isTeamRequired = false;
 
-    // Discover required fields (like Team) via create metadata
+    // Discover the actual Team field key and whether it is required
     try {
       const metaUrl = `https://${jiraDomain}/rest/api/3/issue/createmeta?projectKeys=${projectKey}&issuetypeNames=${encodeURIComponent(issueTypeName)}&expand=projects.issuetypes.fields`;
       const metaResp = await fetch(metaUrl, {
         method: 'GET',
         headers: {
-          'Authorization': `Basic ${auth}`,
-          'Accept': 'application/json',
+          Authorization: `Basic ${auth}`,
+          Accept: 'application/json',
         },
       });
 
@@ -82,54 +88,10 @@ serve(async (req) => {
 
         for (const [fieldKey, fieldMeta] of Object.entries(fields)) {
           const fm: any = fieldMeta;
-          if (fm?.required && typeof fm?.name === 'string' && fm.name.toLowerCase() === 'team') {
+          if (typeof fm?.name === 'string' && fm.name.toLowerCase() === 'team') {
             teamFieldKey = fieldKey;
-            teamAllowedValues = Array.isArray(fm.allowedValues) ? (fm.allowedValues as AllowedValue[]) : [];
+            isTeamRequired = !!fm?.required;
             break;
-          }
-        }
-
-        if (teamFieldKey) {
-          if (teamAllowedValues.length > 0) {
-            if (!teamInput) {
-              if (teamAllowedValues.length === 1) {
-                teamFieldValue = optionToFieldValue(teamAllowedValues[0]);
-              } else {
-                return new Response(
-                  JSON.stringify({
-                    error: 'Jira requires a Team for this project. Please enter a Team and retry.',
-                    field: 'Team',
-                    options: teamAllowedValues.map(v => v.name ?? v.value ?? v.id).filter(Boolean),
-                  }),
-                  { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-                );
-              }
-            } else {
-              const match = teamAllowedValues.find(v => (v.name ?? v.value ?? '').toLowerCase() === teamInput.toLowerCase());
-              if (!match) {
-                return new Response(
-                  JSON.stringify({
-                    error: `Team "${teamInput}" was not found in Jira options.`,
-                    field: 'Team',
-                    options: teamAllowedValues.map(v => v.name ?? v.value ?? v.id).filter(Boolean),
-                  }),
-                  { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-                );
-              }
-              teamFieldValue = optionToFieldValue(match);
-            }
-          } else {
-            // No options returned; still try with the provided value, otherwise fail early.
-            if (!teamInput) {
-              return new Response(
-                JSON.stringify({
-                  error: 'Jira requires a Team for this project, but no selectable options were returned. Please enter a Team value and retry.',
-                  field: 'Team',
-                }),
-                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-              );
-            }
-            teamFieldValue = teamInput;
           }
         }
       } else {
@@ -138,6 +100,21 @@ serve(async (req) => {
       }
     } catch (e) {
       console.warn('Error fetching Jira create metadata:', e);
+    }
+
+    const teamId = extractTeamId(teamInput);
+
+    if (isTeamRequired && !teamId) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          field: 'Team',
+          error: 'Jira requires a Team ID to create issues in this project.',
+          hint: 'Open the Team page in Jira and copy the last part of the URL after /team/ (it looks like a UUID).',
+          exampleTeamId: '36885b3c-1bf0-4f85-a357-c5b858c31de4',
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     for (const issue of issues) {
@@ -185,7 +162,7 @@ serve(async (req) => {
             ],
           },
           issuetype: { name: issueTypeName },
-          ...(teamFieldKey && teamFieldValue ? { [teamFieldKey]: teamFieldValue } : {}),
+          ...(teamId ? { [teamFieldKey]: teamId } : {}),
           labels: [issue.category, 'lovable-import'],
         },
       };
@@ -219,13 +196,16 @@ serve(async (req) => {
       }
     }
 
-    const successful = results.filter(r => r.jiraKey).length;
-    const failed = results.filter(r => r.error).length;
+    const successful = results.filter((r) => r.jiraKey).length;
+    const failed = results.filter((r) => r.error).length;
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
+        success: failed === 0,
+        successful,
+        failed,
         message: `Submitted ${successful} issues to Jira. ${failed} failed.`,
-        results 
+        results,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
