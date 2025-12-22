@@ -56,6 +56,7 @@ export type Database = {
           expected_behavior: string | null
           id: string
           issue_number: string
+          jira_issue_key: string | null
           priority: Database["public"]["Enums"]["issue_priority"]
           reporter_id: string | null
           software_version_id: string | null
@@ -74,6 +75,7 @@ export type Database = {
           expected_behavior?: string | null
           id?: string
           issue_number: string
+          jira_issue_key?: string | null
           priority?: Database["public"]["Enums"]["issue_priority"]
           reporter_id?: string | null
           software_version_id?: string | null
@@ -92,6 +94,7 @@ export type Database = {
           expected_behavior?: string | null
           id?: string
           issue_number?: string
+          jira_issue_key?: string | null
           priority?: Database["public"]["Enums"]["issue_priority"]
           reporter_id?: string | null
           software_version_id?: string | null

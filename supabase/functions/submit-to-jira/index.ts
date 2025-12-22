@@ -20,6 +20,7 @@ interface Issue {
   stations?: { name: string } | null;
   software_versions?: { version: string } | null;
   created_at: string;
+  jira_issue_key?: string | null;
 }
 
 interface Attachment {
@@ -63,7 +64,7 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const auth = btoa(`${jiraEmail}:${jiraApiToken}`);
-    const results: { issueId: string; jiraKey?: string; error?: string; attachmentsUploaded?: number }[] = [];
+    const results: { issueId: string; jiraKey?: string; error?: string; attachmentsUploaded?: number; skipped?: boolean }[] = [];
 
     const issueTypeName = 'Task';
     // Default Team ID for NEURA project
@@ -161,6 +162,12 @@ serve(async (req) => {
     console.log(`Found ${allAttachments?.length || 0} total attachments for ${issueIds.length} issues`);
 
     for (const issue of issues) {
+      // Skip issues that already have a Jira key
+      if (issue.jira_issue_key) {
+        console.log(`Skipping issue ${issue.issue_number} - already synced as ${issue.jira_issue_key}`);
+        results.push({ issueId: issue.id, jiraKey: issue.jira_issue_key, skipped: true });
+        continue;
+      }
 
       // Build description with all relevant info
       const descriptionParts = [
@@ -231,6 +238,18 @@ serve(async (req) => {
           const jiraResponse = await response.json();
           const jiraKey = jiraResponse.key;
           console.log(`Successfully created Jira issue ${jiraKey} for ${issue.issue_number}`);
+          
+          // Save the Jira key to the database to prevent duplicate submissions
+          const { error: updateError } = await supabase
+            .from('issues')
+            .update({ jira_issue_key: jiraKey })
+            .eq('id', issue.id);
+          
+          if (updateError) {
+            console.warn(`Failed to save Jira key for issue ${issue.id}:`, updateError);
+          } else {
+            console.log(`Saved Jira key ${jiraKey} for issue ${issue.id}`);
+          }
           
           // Now upload attachments for this issue
           const issueAttachments = attachmentsByIssue[issue.id] || [];
@@ -314,7 +333,8 @@ serve(async (req) => {
       }
     }
 
-    const successful = results.filter((r) => r.jiraKey).length;
+    const successful = results.filter((r) => r.jiraKey && !r.skipped).length;
+    const skipped = results.filter((r) => r.skipped).length;
     const failed = results.filter((r) => r.error).length;
     const totalAttachments = results.reduce((sum, r) => sum + (r.attachmentsUploaded || 0), 0);
 
@@ -322,9 +342,10 @@ serve(async (req) => {
       JSON.stringify({
         success: failed === 0,
         successful,
+        skipped,
         failed,
         totalAttachments,
-        message: `Submitted ${successful} issues to Jira with ${totalAttachments} attachments. ${failed} failed.`,
+        message: `Submitted ${successful} new issues to Jira with ${totalAttachments} attachments. ${skipped} already synced. ${failed} failed.`,
         results,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
