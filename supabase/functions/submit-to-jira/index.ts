@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -21,6 +22,13 @@ interface Issue {
   created_at: string;
 }
 
+interface Attachment {
+  id: string;
+  issue_id: string;
+  file_name: string;
+  file_path: string;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -32,6 +40,8 @@ serve(async (req) => {
     
     const jiraEmail = Deno.env.get('JIRA_EMAIL');
     const jiraApiToken = Deno.env.get('JIRA_API_TOKEN');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const jiraDomain = 'neurarobotics.atlassian.net';
     const projectKey = 'NEURA';
 
@@ -43,8 +53,17 @@ serve(async (req) => {
       );
     }
 
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Missing Supabase credentials');
+      return new Response(
+        JSON.stringify({ error: 'Supabase credentials not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const auth = btoa(`${jiraEmail}:${jiraApiToken}`);
-    const results: { issueId: string; jiraKey?: string; error?: string }[] = [];
+    const results: { issueId: string; jiraKey?: string; error?: string; attachmentsUploaded?: number }[] = [];
 
     const issueTypeName = 'Task';
     // Default Team ID for NEURA project
@@ -119,6 +138,28 @@ serve(async (req) => {
       );
     }
 
+    // Fetch all attachments for these issues
+    const issueIds = issues.map(i => i.id);
+    const { data: allAttachments, error: attError } = await supabase
+      .from('issue_attachments')
+      .select('*')
+      .in('issue_id', issueIds);
+
+    if (attError) {
+      console.warn('Error fetching attachments:', attError);
+    }
+
+    // Group attachments by issue_id
+    const attachmentsByIssue: Record<string, Attachment[]> = {};
+    (allAttachments || []).forEach((att: Attachment) => {
+      if (!attachmentsByIssue[att.issue_id]) {
+        attachmentsByIssue[att.issue_id] = [];
+      }
+      attachmentsByIssue[att.issue_id].push(att);
+    });
+
+    console.log(`Found ${allAttachments?.length || 0} total attachments for ${issueIds.length} issues`);
+
     for (const issue of issues) {
 
       // Build description with all relevant info
@@ -188,8 +229,83 @@ serve(async (req) => {
           results.push({ issueId: issue.id, error: `Jira ${response.status}: ${errorText}` });
         } else {
           const jiraResponse = await response.json();
-          console.log(`Successfully created Jira issue ${jiraResponse.key} for ${issue.issue_number}`);
-          results.push({ issueId: issue.id, jiraKey: jiraResponse.key });
+          const jiraKey = jiraResponse.key;
+          console.log(`Successfully created Jira issue ${jiraKey} for ${issue.issue_number}`);
+          
+          // Now upload attachments for this issue
+          const issueAttachments = attachmentsByIssue[issue.id] || [];
+          let attachmentsUploaded = 0;
+
+          for (const attachment of issueAttachments) {
+            try {
+              console.log(`Downloading attachment ${attachment.file_name} from storage...`);
+              
+              // Download file from Supabase Storage
+              const { data: fileData, error: downloadError } = await supabase.storage
+                .from('issue-attachments')
+                .download(attachment.file_path);
+
+              if (downloadError || !fileData) {
+                console.error(`Failed to download attachment ${attachment.file_name}:`, downloadError);
+                continue;
+              }
+
+              // Convert blob to ArrayBuffer for upload
+              const arrayBuffer = await fileData.arrayBuffer();
+              const uint8Array = new Uint8Array(arrayBuffer);
+
+              // Create form data for Jira attachment upload
+              // Jira expects multipart/form-data with X-Atlassian-Token: no-check
+              const boundary = '----FormBoundary' + Math.random().toString(36).substring(2);
+              
+              // Build multipart body manually
+              const encoder = new TextEncoder();
+              const contentDisposition = `Content-Disposition: form-data; name="file"; filename="${attachment.file_name}"`;
+              const contentType = `Content-Type: application/octet-stream`;
+              
+              const header = encoder.encode(
+                `--${boundary}\r\n${contentDisposition}\r\n${contentType}\r\n\r\n`
+              );
+              const footer = encoder.encode(`\r\n--${boundary}--\r\n`);
+              
+              // Combine header + file data + footer
+              const body = new Uint8Array(header.length + uint8Array.length + footer.length);
+              body.set(header, 0);
+              body.set(uint8Array, header.length);
+              body.set(footer, header.length + uint8Array.length);
+
+              console.log(`Uploading attachment ${attachment.file_name} to Jira issue ${jiraKey}...`);
+
+              const attachResponse = await fetch(
+                `https://${jiraDomain}/rest/api/3/issue/${jiraKey}/attachments`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Basic ${auth}`,
+                    'X-Atlassian-Token': 'no-check',
+                    'Content-Type': `multipart/form-data; boundary=${boundary}`,
+                  },
+                  body: body,
+                }
+              );
+
+              if (attachResponse.ok) {
+                console.log(`Successfully uploaded attachment ${attachment.file_name} to ${jiraKey}`);
+                attachmentsUploaded++;
+              } else {
+                const attachError = await attachResponse.text();
+                console.error(`Failed to upload attachment ${attachment.file_name}:`, attachResponse.status, attachError);
+              }
+            } catch (attachErr) {
+              console.error(`Error processing attachment ${attachment.file_name}:`, attachErr);
+            }
+          }
+
+          results.push({ 
+            issueId: issue.id, 
+            jiraKey, 
+            attachmentsUploaded 
+          });
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -200,13 +316,15 @@ serve(async (req) => {
 
     const successful = results.filter((r) => r.jiraKey).length;
     const failed = results.filter((r) => r.error).length;
+    const totalAttachments = results.reduce((sum, r) => sum + (r.attachmentsUploaded || 0), 0);
 
     return new Response(
       JSON.stringify({
         success: failed === 0,
         successful,
         failed,
-        message: `Submitted ${successful} issues to Jira. ${failed} failed.`,
+        totalAttachments,
+        message: `Submitted ${successful} issues to Jira with ${totalAttachments} attachments. ${failed} failed.`,
         results,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
