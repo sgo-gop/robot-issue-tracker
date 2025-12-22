@@ -28,7 +28,7 @@ serve(async (req) => {
   }
 
   try {
-    const { issues } = await req.json() as { issues: Issue[] };
+    const { issues, team } = await req.json() as { issues: Issue[]; team?: string | null };
     
     const jiraEmail = Deno.env.get('JIRA_EMAIL');
     const jiraApiToken = Deno.env.get('JIRA_API_TOKEN');
@@ -46,14 +46,101 @@ serve(async (req) => {
     const auth = btoa(`${jiraEmail}:${jiraApiToken}`);
     const results: { issueId: string; jiraKey?: string; error?: string }[] = [];
 
+    const issueTypeName = 'Task';
+    const teamInput = typeof team === 'string' ? team.trim() : '';
+
+    type AllowedValue = { id?: string; name?: string; value?: string };
+
+    const optionToFieldValue = (opt: AllowedValue | string) => {
+      if (typeof opt === 'string') return opt;
+      if (opt.id) return { id: opt.id };
+      if (opt.value) return { value: opt.value };
+      if (opt.name) return { value: opt.name };
+      return opt;
+    };
+
+    let teamFieldKey: string | null = null;
+    let teamAllowedValues: AllowedValue[] = [];
+    let teamFieldValue: unknown | null = null;
+
+    // Discover required fields (like Team) via create metadata
+    try {
+      const metaUrl = `https://${jiraDomain}/rest/api/3/issue/createmeta?projectKeys=${projectKey}&issuetypeNames=${encodeURIComponent(issueTypeName)}&expand=projects.issuetypes.fields`;
+      const metaResp = await fetch(metaUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Basic ${auth}`,
+          'Accept': 'application/json',
+        },
+      });
+
+      if (metaResp.ok) {
+        const meta = await metaResp.json();
+        const project = meta?.projects?.[0];
+        const issuetype = project?.issuetypes?.find((it: any) => it?.name === issueTypeName) ?? project?.issuetypes?.[0];
+        const fields = issuetype?.fields ?? {};
+
+        for (const [fieldKey, fieldMeta] of Object.entries(fields)) {
+          const fm: any = fieldMeta;
+          if (fm?.required && typeof fm?.name === 'string' && fm.name.toLowerCase() === 'team') {
+            teamFieldKey = fieldKey;
+            teamAllowedValues = Array.isArray(fm.allowedValues) ? (fm.allowedValues as AllowedValue[]) : [];
+            break;
+          }
+        }
+
+        if (teamFieldKey) {
+          if (teamAllowedValues.length > 0) {
+            if (!teamInput) {
+              if (teamAllowedValues.length === 1) {
+                teamFieldValue = optionToFieldValue(teamAllowedValues[0]);
+              } else {
+                return new Response(
+                  JSON.stringify({
+                    error: 'Jira requires a Team for this project. Please enter a Team and retry.',
+                    field: 'Team',
+                    options: teamAllowedValues.map(v => v.name ?? v.value ?? v.id).filter(Boolean),
+                  }),
+                  { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+                );
+              }
+            } else {
+              const match = teamAllowedValues.find(v => (v.name ?? v.value ?? '').toLowerCase() === teamInput.toLowerCase());
+              if (!match) {
+                return new Response(
+                  JSON.stringify({
+                    error: `Team "${teamInput}" was not found in Jira options.`,
+                    field: 'Team',
+                    options: teamAllowedValues.map(v => v.name ?? v.value ?? v.id).filter(Boolean),
+                  }),
+                  { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+                );
+              }
+              teamFieldValue = optionToFieldValue(match);
+            }
+          } else {
+            // No options returned; still try with the provided value, otherwise fail early.
+            if (!teamInput) {
+              return new Response(
+                JSON.stringify({
+                  error: 'Jira requires a Team for this project, but no selectable options were returned. Please enter a Team value and retry.',
+                  field: 'Team',
+                }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+              );
+            }
+            teamFieldValue = teamInput;
+          }
+        }
+      } else {
+        const t = await metaResp.text();
+        console.warn('Could not fetch Jira create metadata:', metaResp.status, t);
+      }
+    } catch (e) {
+      console.warn('Error fetching Jira create metadata:', e);
+    }
+
     for (const issue of issues) {
-      // Map priority to Jira priority
-      const priorityMap: Record<string, string> = {
-        'critical': 'Highest',
-        'high': 'High',
-        'medium': 'Medium',
-        'low': 'Low',
-      };
 
       // Build description with all relevant info
       const descriptionParts = [
@@ -97,7 +184,8 @@ serve(async (req) => {
               },
             ],
           },
-          issuetype: { name: 'Task' },
+          issuetype: { name: issueTypeName },
+          ...(teamFieldKey && teamFieldValue ? { [teamFieldKey]: teamFieldValue } : {}),
           labels: [issue.category, 'lovable-import'],
         },
       };
@@ -118,7 +206,7 @@ serve(async (req) => {
         if (!response.ok) {
           const errorText = await response.text();
           console.error(`Jira API error for ${issue.issue_number}:`, response.status, errorText);
-          results.push({ issueId: issue.id, error: `Jira API error: ${response.status}` });
+          results.push({ issueId: issue.id, error: `Jira ${response.status}: ${errorText}` });
         } else {
           const jiraResponse = await response.json();
           console.log(`Successfully created Jira issue ${jiraResponse.key} for ${issue.issue_number}`);
