@@ -9,6 +9,8 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Issue, IssueStatus, IssueAttachment } from '@/types/database';
 import { useStations } from '@/hooks/useStations';
+import { useSoftwareVersions } from '@/hooks/useSoftwareVersions';
+import { useAuth } from '@/hooks/useAuth';
 import { FileDown, CalendarIcon, Loader2, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,6 +23,8 @@ interface PDFReportProps {
 
 export const PDFReport = ({ issues }: PDFReportProps) => {
   const { stations } = useStations();
+  const { versions } = useSoftwareVersions();
+  const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isGenerating, setIsGenerating] = useState(false);
@@ -28,17 +32,27 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
   const [jiraTeam, setJiraTeam] = useState('');
   const [statusFilter, setStatusFilter] = useState<IssueStatus | 'all'>('all');
   const [stationFilter, setStationFilter] = useState<string>('all');
+  const [softwareVersionFilter, setSoftwareVersionFilter] = useState<string>('all');
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
 
   const filteredIssues = issues.filter((issue) => {
     const matchesStatus = statusFilter === 'all' || issue.status === statusFilter;
     const matchesStation = stationFilter === 'all' || issue.station_id === stationFilter;
+    const matchesSoftwareVersion = softwareVersionFilter === 'all' || issue.software_version_id === softwareVersionFilter;
     const issueDate = new Date(issue.created_at);
     const matchesStart = !startDate || issueDate >= startDate;
     const matchesEnd = !endDate || issueDate <= endDate;
-    return matchesStatus && matchesStation && matchesStart && matchesEnd;
+    return matchesStatus && matchesStation && matchesSoftwareVersion && matchesStart && matchesEnd;
   });
+
+  // Get the selected software version name
+  const selectedSoftwareVersion = softwareVersionFilter !== 'all' 
+    ? versions.find(v => v.id === softwareVersionFilter)?.version 
+    : null;
+
+  // Get the user's name from metadata or email
+  const reporterName = user?.user_metadata?.full_name || user?.email || 'Unknown User';
 
   // Issues that haven't been synced to Jira yet
   const unsyncedIssues = filteredIssues.filter((issue) => !issue.jira_issue_key);
@@ -124,6 +138,8 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
         <div class="header">
           <h1>Robot Testing Issue Report</h1>
           <p>Generated on ${format(new Date(), 'MMMM d, yyyy \'at\' h:mm a')}</p>
+          <p><strong>Created by:</strong> ${reporterName}</p>
+          ${selectedSoftwareVersion ? `<p><strong>Software Version:</strong> ${selectedSoftwareVersion}</p>` : ''}
           ${startDate || endDate ? `<p>Date range: ${startDate ? format(startDate, 'MMM d, yyyy') : 'Start'} - ${endDate ? format(endDate, 'MMM d, yyyy') : 'Present'}</p>` : ''}
         </div>
         
@@ -335,6 +351,23 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
                 {stations.map((station) => (
                   <SelectItem key={station.id} value={station.id}>
                     {station.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Software Version</Label>
+            <Select value={softwareVersionFilter} onValueChange={setSoftwareVersionFilter}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Versions</SelectItem>
+                {versions.map((version) => (
+                  <SelectItem key={version.id} value={version.id}>
+                    {version.version}
                   </SelectItem>
                 ))}
               </SelectContent>
