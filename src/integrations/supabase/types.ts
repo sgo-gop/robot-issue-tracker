@@ -58,6 +58,7 @@ export type Database = {
           issue_number: string
           priority: Database["public"]["Enums"]["issue_priority"]
           reporter_id: string | null
+          software_version_id: string | null
           station_id: string | null
           status: Database["public"]["Enums"]["issue_status"]
           steps_to_reproduce: string | null
@@ -75,6 +76,7 @@ export type Database = {
           issue_number: string
           priority?: Database["public"]["Enums"]["issue_priority"]
           reporter_id?: string | null
+          software_version_id?: string | null
           station_id?: string | null
           status?: Database["public"]["Enums"]["issue_status"]
           steps_to_reproduce?: string | null
@@ -92,6 +94,7 @@ export type Database = {
           issue_number?: string
           priority?: Database["public"]["Enums"]["issue_priority"]
           reporter_id?: string | null
+          software_version_id?: string | null
           station_id?: string | null
           status?: Database["public"]["Enums"]["issue_status"]
           steps_to_reproduce?: string | null
@@ -99,6 +102,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "issues_software_version_id_fkey"
+            columns: ["software_version_id"]
+            isOneToOne: false
+            referencedRelation: "software_versions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "issues_station_id_fkey"
             columns: ["station_id"]
@@ -126,6 +136,27 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+        }
+        Relationships: []
+      }
+      software_versions: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          version: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          version: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          version?: string
         }
         Relationships: []
       }

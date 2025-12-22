@@ -9,6 +9,13 @@ export interface Station {
   created_at?: string;
 }
 
+export interface SoftwareVersion {
+  id: string;
+  version: string;
+  description?: string | null;
+  created_at?: string;
+}
+
 export interface Issue {
   id: string;
   issue_number: string;
@@ -18,6 +25,7 @@ export interface Issue {
   status: IssueStatus;
   category: IssueCategory;
   station_id: string | null;
+  software_version_id: string | null;
   steps_to_reproduce: string | null;
   expected_behavior: string | null;
   actual_behavior: string | null;
@@ -26,6 +34,7 @@ export interface Issue {
   updated_at: string;
   closed_at: string | null;
   stations?: { id: string; name: string } | null;
+  software_versions?: { id: string; version: string } | null;
 }
 
 export interface IssueAttachment {
