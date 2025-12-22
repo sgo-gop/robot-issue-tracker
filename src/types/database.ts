@@ -33,6 +33,7 @@ export interface Issue {
   created_at: string;
   updated_at: string;
   closed_at: string | null;
+  jira_issue_key?: string | null;
   stations?: { id: string; name: string } | null;
   software_versions?: { id: string; version: string } | null;
 }

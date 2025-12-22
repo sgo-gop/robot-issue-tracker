@@ -13,6 +13,7 @@ import { FileDown, CalendarIcon, Loader2, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface PDFReportProps {
   issues: Issue[];
@@ -21,6 +22,7 @@ interface PDFReportProps {
 export const PDFReport = ({ issues }: PDFReportProps) => {
   const { stations } = useStations();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSubmittingToJira, setIsSubmittingToJira] = useState(false);
   const [jiraTeam, setJiraTeam] = useState('');
@@ -37,6 +39,10 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
     const matchesEnd = !endDate || issueDate <= endDate;
     return matchesStatus && matchesStation && matchesStart && matchesEnd;
   });
+
+  // Issues that haven't been synced to Jira yet
+  const unsyncedIssues = filteredIssues.filter((issue) => !issue.jira_issue_key);
+  const alreadySyncedCount = filteredIssues.length - unsyncedIssues.length;
 
   const generatePDF = async () => {
     setIsGenerating(true);
@@ -241,10 +247,18 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
   };
 
   const submitToJira = async () => {
+    if (unsyncedIssues.length === 0) {
+      toast({
+        title: 'All issues already synced',
+        description: 'All filtered issues have already been submitted to Jira.',
+      });
+      return;
+    }
+    
     setIsSubmittingToJira(true);
     try {
       const { data, error } = await supabase.functions.invoke('submit-to-jira', {
-        body: { issues: filteredIssues, team: jiraTeam.trim() || null }
+        body: { issues: unsyncedIssues, team: jiraTeam.trim() || null }
       });
 
       if (error) {
@@ -273,6 +287,9 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
         description: firstFailure ? `${data.message}\n\nFirst error: ${String(firstFailure).slice(0, 200)}` : data.message,
         variant: data.failed > 0 ? 'destructive' : undefined,
       });
+
+      // Refresh issues to update jira_issue_key values
+      queryClient.invalidateQueries({ queryKey: ['issues'] });
     } catch (error) {
       console.error('Error submitting to Jira:', error);
       toast({
@@ -381,9 +398,15 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
           </div>
         </div>
 
-        <div className="rounded-md bg-muted p-4">
+        <div className="rounded-md bg-muted p-4 space-y-1">
           <p className="text-sm text-muted-foreground">
             {filteredIssues.length} issue{filteredIssues.length !== 1 ? 's' : ''} match your filters
+          </p>
+          <p className="text-sm text-muted-foreground">
+            <span className="font-medium">{unsyncedIssues.length}</span> not yet synced to Jira
+            {alreadySyncedCount > 0 && (
+              <span className="text-green-600 ml-2">({alreadySyncedCount} already synced)</span>
+            )}
           </p>
         </div>
 
@@ -398,7 +421,7 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
           </Button>
           <Button 
             onClick={submitToJira} 
-            disabled={isSubmittingToJira || filteredIssues.length === 0} 
+            disabled={isSubmittingToJira || unsyncedIssues.length === 0} 
             variant="secondary"
             className="flex-1"
           >
@@ -407,7 +430,7 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
             ) : (
               <Send className="mr-2 h-4 w-4" />
             )}
-            Submit to Jira
+            Submit to Jira ({unsyncedIssues.length})
           </Button>
         </div>
       </CardContent>
