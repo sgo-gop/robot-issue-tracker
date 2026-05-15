@@ -18,8 +18,6 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 
-const ADMIN_PASSWORD = 'Neura2026';
-
 export const ClearAllIssues = () => {
   const [password, setPassword] = useState('');
   const [isOpen, setIsOpen] = useState(false);
@@ -28,49 +26,35 @@ export const ClearAllIssues = () => {
   const queryClient = useQueryClient();
 
   const handleClearAll = async () => {
-    if (password !== ADMIN_PASSWORD) {
-      toast({
-        title: 'Invalid password',
-        description: 'The password you entered is incorrect.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
+    if (!password) return;
     setIsDeleting(true);
 
     try {
-      // First delete all attachments from storage
-      const { data: attachments } = await supabase
-        .from('issue_attachments')
-        .select('file_path');
+      const { data, error } = await supabase.functions.invoke('clear-all-issues', {
+        body: { password },
+      });
 
-      if (attachments && attachments.length > 0) {
-        const filePaths = attachments.map((a) => a.file_path);
-        await supabase.storage.from('issue-attachments').remove(filePaths);
+      if (error || (data && (data as any).error)) {
+        const msg = (data as any)?.error || error?.message || 'Failed to clear issues';
+        toast({
+          title: msg.toLowerCase().includes('password') ? 'Invalid password' : 'Error clearing issues',
+          description: msg,
+          variant: 'destructive',
+        });
+        return;
       }
 
-      // Delete all attachments records
-      await supabase.from('issue_attachments').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-
-      // Delete all issues
-      const { error } = await supabase.from('issues').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-
-      if (error) throw error;
-
       queryClient.invalidateQueries({ queryKey: ['issues'] });
-      
       toast({
         title: 'All issues cleared',
         description: 'All issues and attachments have been permanently deleted.',
       });
-
       setIsOpen(false);
       setPassword('');
     } catch (error: any) {
       toast({
         title: 'Error clearing issues',
-        description: error.message,
+        description: error?.message ?? 'Unknown error',
         variant: 'destructive',
       });
     } finally {
