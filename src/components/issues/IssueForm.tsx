@@ -1,7 +1,6 @@
 import { useState, useRef } from 'react';
 import { useSession } from '@/hooks/useSession';
 import { useIssues, useUploadAttachment } from '@/hooks/useIssues';
-import { useStations } from '@/hooks/useStations';
 import { useSoftwareVersions } from '@/hooks/useSoftwareVersions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { IssuePriority, IssueCategory } from '@/types/database';
+import { IssuePriority, IssueCategory, RobotType, ROBOT_TYPES } from '@/types/database';
 import { Camera, Loader2, X, Upload } from 'lucide-react';
 import { VoiceAssistant } from './VoiceAssistant';
 
@@ -20,7 +19,6 @@ interface IssueFormProps {
 export const IssueForm = ({ onSuccess }: IssueFormProps) => {
   const { user } = useSession();
   const { createIssue, isCreating } = useIssues();
-  const { stations } = useStations();
   const { versions } = useSoftwareVersions();
   const uploadAttachment = useUploadAttachment();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -29,7 +27,7 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<IssuePriority>('medium');
   const [category, setCategory] = useState<IssueCategory>('other');
-  const [stationId, setStationId] = useState<string>(user?.stationId || '');
+  const [robotType, setRobotType] = useState<string>(user?.robotType || '');
   const [softwareVersionId, setSoftwareVersionId] = useState<string>('');
   const [stepsToReproduce, setStepsToReproduce] = useState('');
   const [expectedBehavior, setExpectedBehavior] = useState('');
@@ -55,7 +53,7 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
       description: description.trim(),
       priority,
       category,
-      station_id: stationId || null,
+      robot_type: (robotType || null) as RobotType | null,
       software_version_id: softwareVersionId || null,
       steps_to_reproduce: stepsToReproduce.trim() || undefined,
       expected_behavior: expectedBehavior.trim() || undefined,
@@ -73,7 +71,7 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
     setDescription('');
     setPriority('medium');
     setCategory('other');
-    setStationId(user?.stationId || '');
+    setRobotType(user?.robotType || '');
     setSoftwareVersionId('');
     setStepsToReproduce('');
     setExpectedBehavior('');
@@ -108,7 +106,7 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
           <div>
             <CardTitle>Report New Issue</CardTitle>
             <CardDescription>
-              Reporting as <span className="font-medium">{user?.name}</span> from <span className="font-medium">{user?.stationName}</span>
+              Reporting as <span className="font-medium">{user?.name}</span> on <span className="font-medium">{user?.robotType}</span>
             </CardDescription>
           </div>
           <VoiceAssistant onParsed={handleVoiceParsed} />
@@ -130,15 +128,15 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="station">Station</Label>
-              <Select value={stationId} onValueChange={setStationId}>
+              <Label htmlFor="robot-type">Robot Type</Label>
+              <Select value={robotType} onValueChange={setRobotType}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select station" />
+                  <SelectValue placeholder="Select robot type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {stations.map((station) => (
-                    <SelectItem key={station.id} value={station.id}>
-                      {station.name}
+                  {ROBOT_TYPES.map((rt) => (
+                    <SelectItem key={rt} value={rt}>
+                      {rt}
                     </SelectItem>
                   ))}
                 </SelectContent>
