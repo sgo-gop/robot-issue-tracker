@@ -116,7 +116,7 @@ const Index = () => {
           <Card>
             <CardHeader>
               <CardTitle>Recent Issues</CardTitle>
-              <CardDescription>Latest reported issues from all stations</CardDescription>
+              <CardDescription>Latest reported issues from all robots</CardDescription>
             </CardHeader>
             <CardContent>
               {issuesLoading ? (
