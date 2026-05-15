@@ -28,7 +28,6 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
   const queryClient = useQueryClient();
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSubmittingToJira, setIsSubmittingToJira] = useState(false);
-  const [jiraTeam, setJiraTeam] = useState('');
   const [jiraProjectKey, setJiraProjectKey] = useState<'SAIR' | 'NEURA'>('SAIR');
   const [statusFilter, setStatusFilter] = useState<IssueStatus | 'all'>('all');
   const [robotFilter, setRobotFilter] = useState<string>('all');
@@ -274,7 +273,7 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
     setIsSubmittingToJira(true);
     try {
       const { data, error } = await supabase.functions.invoke('submit-to-jira', {
-        body: { issues: unsyncedIssues, team: jiraTeam.trim() || null, projectKey: jiraProjectKey }
+        body: { issues: unsyncedIssues, projectKey: jiraProjectKey }
       });
 
       if (error) {
@@ -417,30 +416,17 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label>Jira Project</Label>
-            <Select value={jiraProjectKey} onValueChange={(v) => setJiraProjectKey(v as 'SAIR' | 'NEURA')}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="SAIR">SAIR</SelectItem>
-                <SelectItem value="NEURA">NEURA</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>Jira Team ID</Label>
-            <Input
-              value={jiraTeam}
-              onChange={(e) => setJiraTeam(e.target.value)}
-              placeholder="Paste the Team ID (UUID) or full /team/ URL"
-            />
-            <p className="text-xs text-muted-foreground">
-              Jira expects a Team <span className="font-mono">ID</span> (UUID). Open the Team page in Jira and copy the last part of the URL after <span className="font-mono">/team/</span>.
-            </p>
-          </div>
+        <div className="space-y-2">
+          <Label>Jira Project</Label>
+          <Select value={jiraProjectKey} onValueChange={(v) => setJiraProjectKey(v as 'SAIR' | 'NEURA')}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="SAIR">SAIR</SelectItem>
+              <SelectItem value="NEURA">NEURA</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="rounded-md bg-muted p-4 space-y-1">
