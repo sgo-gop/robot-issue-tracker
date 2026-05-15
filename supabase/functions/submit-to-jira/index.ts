@@ -69,6 +69,61 @@ serve(async (req) => {
     const auth = btoa(`${jiraEmail}:${jiraApiToken}`);
     const results: { issueId: string; jiraKey?: string; error?: string; attachmentsUploaded?: number; skipped?: boolean }[] = [];
 
+    // Safe credential metadata logging (never log full token).
+    console.log('Jira config:', {
+      domain: jiraDomain,
+      projectKey,
+      emailConfigured: !!jiraEmail,
+      emailDomain: jiraEmail?.split('@')[1] || null,
+      tokenLength: jiraApiToken?.length || 0,
+      tokenSuffix: jiraApiToken ? jiraApiToken.slice(-4) : null,
+    });
+
+    // 1) Verify the credentials are valid at all.
+    try {
+      const meResp = await fetch(`https://${jiraDomain}/rest/api/3/myself`, {
+        headers: { Authorization: `Basic ${auth}`, Accept: 'application/json' },
+      });
+      if (!meResp.ok) {
+        const t = await meResp.text();
+        console.error('Jira /myself failed:', meResp.status, t);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            field: 'Credentials',
+            error: `Jira credentials are invalid or expired (HTTP ${meResp.status}). Update JIRA_EMAIL / JIRA_API_TOKEN.`,
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } else {
+        const me = await meResp.json();
+        console.log('Jira authenticated as:', me?.emailAddress || me?.accountId || 'unknown');
+      }
+    } catch (e) {
+      console.error('Jira /myself error:', e);
+    }
+
+    // 2) Verify the account can access the target project.
+    try {
+      const projResp = await fetch(`https://${jiraDomain}/rest/api/3/project/${projectKey}`, {
+        headers: { Authorization: `Basic ${auth}`, Accept: 'application/json' },
+      });
+      if (!projResp.ok) {
+        const t = await projResp.text();
+        console.error(`Jira project ${projectKey} access failed:`, projResp.status, t);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            field: 'ProjectAccess',
+            error: `Jira account is authenticated but cannot access project ${projectKey} (HTTP ${projResp.status}). Ask a Jira admin to grant this user "Browse" and "Create issues" permission on ${projectKey}.`,
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    } catch (e) {
+      console.error('Jira project access error:', e);
+    }
+
     // SAIR uses Bug with rich custom fields per integration guide; NEURA stays as Task.
     const isSair = projectKey === 'SAIR';
     const issueTypeName = isSair ? 'Bug' : 'Task';
@@ -283,7 +338,10 @@ serve(async (req) => {
         if (!response.ok) {
           const errorText = await response.text();
           console.error(`Jira API error for ${issue.issue_number}:`, response.status, errorText);
-          results.push({ issueId: issue.id, error: `Jira ${response.status}: ${errorText}` });
+          const friendly = response.status === 401 || response.status === 403
+            ? `Jira ${response.status}: account lacks permission to create ${issueTypeName} in ${projectKey}. Ask a Jira admin to grant "Create issues" permission. Raw: ${errorText}`
+            : `Jira ${response.status}: ${errorText}`;
+          results.push({ issueId: issue.id, error: friendly });
         } else {
           const jiraResponse = await response.json();
           const jiraKey = jiraResponse.key;
