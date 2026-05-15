@@ -59,8 +59,8 @@ export type Database = {
           jira_issue_key: string | null
           priority: Database["public"]["Enums"]["issue_priority"]
           reporter_id: string | null
+          robot_type: Database["public"]["Enums"]["robot_type"] | null
           software_version_id: string | null
-          station_id: string | null
           status: Database["public"]["Enums"]["issue_status"]
           steps_to_reproduce: string | null
           title: string
@@ -78,8 +78,8 @@ export type Database = {
           jira_issue_key?: string | null
           priority?: Database["public"]["Enums"]["issue_priority"]
           reporter_id?: string | null
+          robot_type?: Database["public"]["Enums"]["robot_type"] | null
           software_version_id?: string | null
-          station_id?: string | null
           status?: Database["public"]["Enums"]["issue_status"]
           steps_to_reproduce?: string | null
           title: string
@@ -97,8 +97,8 @@ export type Database = {
           jira_issue_key?: string | null
           priority?: Database["public"]["Enums"]["issue_priority"]
           reporter_id?: string | null
+          robot_type?: Database["public"]["Enums"]["robot_type"] | null
           software_version_id?: string | null
-          station_id?: string | null
           status?: Database["public"]["Enums"]["issue_status"]
           steps_to_reproduce?: string | null
           title?: string
@@ -110,13 +110,6 @@ export type Database = {
             columns: ["software_version_id"]
             isOneToOne: false
             referencedRelation: "software_versions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "issues_station_id_fkey"
-            columns: ["station_id"]
-            isOneToOne: false
-            referencedRelation: "stations"
             referencedColumns: ["id"]
           },
         ]
@@ -163,24 +156,6 @@ export type Database = {
         }
         Relationships: []
       }
-      stations: {
-        Row: {
-          created_at: string
-          id: string
-          name: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          name: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          name?: string
-        }
-        Relationships: []
-      }
       user_roles: {
         Row: {
           id: string
@@ -222,6 +197,14 @@ export type Database = {
         | "other"
       issue_priority: "low" | "medium" | "high" | "critical"
       issue_status: "open" | "closed"
+      robot_type:
+        | "LARA 3"
+        | "LARA 5"
+        | "LARA 8"
+        | "LARA 10"
+        | "MAIRA M"
+        | "MAIRA S"
+        | "MAIRA L"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -359,6 +342,15 @@ export const Constants = {
       ],
       issue_priority: ["low", "medium", "high", "critical"],
       issue_status: ["open", "closed"],
+      robot_type: [
+        "LARA 3",
+        "LARA 5",
+        "LARA 8",
+        "LARA 10",
+        "MAIRA M",
+        "MAIRA S",
+        "MAIRA L",
+      ],
     },
   },
 } as const
