@@ -69,6 +69,56 @@ serve(async (req) => {
     const auth = btoa(`${jiraEmail}:${jiraApiToken}`);
     const results: { issueId: string; jiraKey?: string; error?: string; attachmentsUploaded?: number; skipped?: boolean }[] = [];
 
+    const fetchJiraDiagnostic = async () => {
+      const diagnostic: Record<string, unknown> = {
+        configuredEmail: jiraEmail,
+        projectKey,
+      };
+
+      try {
+        const myselfResp = await fetch(`https://${jiraDomain}/rest/api/3/myself`, {
+          headers: { Authorization: `Basic ${auth}`, Accept: 'application/json' },
+        });
+        const myselfText = await myselfResp.text();
+        diagnostic.myselfStatus = myselfResp.status;
+        if (myselfResp.ok) {
+          const myself = JSON.parse(myselfText);
+          diagnostic.jiraAccount = {
+            accountId: myself.accountId,
+            displayName: myself.displayName,
+            emailAddress: myself.emailAddress ?? null,
+            active: myself.active,
+          };
+        } else {
+          diagnostic.myselfError = myselfText.slice(0, 500);
+        }
+      } catch (error) {
+        diagnostic.myselfError = error instanceof Error ? error.message : String(error);
+      }
+
+      try {
+        const permissionsUrl = `https://${jiraDomain}/rest/api/3/mypermissions?projectKey=${encodeURIComponent(projectKey)}&permissions=BROWSE_PROJECTS,CREATE_ISSUES`;
+        const permissionsResp = await fetch(permissionsUrl, {
+          headers: { Authorization: `Basic ${auth}`, Accept: 'application/json' },
+        });
+        const permissionsText = await permissionsResp.text();
+        diagnostic.permissionsStatus = permissionsResp.status;
+        if (permissionsResp.ok) {
+          const permissions = JSON.parse(permissionsText)?.permissions ?? {};
+          diagnostic.permissions = {
+            BROWSE_PROJECTS: !!permissions.BROWSE_PROJECTS?.havePermission,
+            CREATE_ISSUES: !!permissions.CREATE_ISSUES?.havePermission,
+          };
+        } else {
+          diagnostic.permissionsError = permissionsText.slice(0, 500);
+        }
+      } catch (error) {
+        diagnostic.permissionsError = error instanceof Error ? error.message : String(error);
+      }
+
+      return diagnostic;
+    };
+
     // Safe credential metadata logging (never log full token).
     console.log('Jira config:', {
       domain: jiraDomain,
@@ -307,15 +357,18 @@ serve(async (req) => {
         if (!response.ok) {
           const errorText = await response.text();
           console.error(`Jira API error for ${issue.issue_number}:`, response.status, errorText);
+          const diagnostic = await fetchJiraDiagnostic();
+          console.error(`Jira diagnostic for ${issue.issue_number}:`, JSON.stringify(diagnostic));
           const permissionDenied = /无权|permission|permissions|not permitted|not authorized|cannot create|create issues/i.test(errorText);
           const typeLabel = isSubr ? 'Bug' : issueTypeName;
+          const diagnosticText = ` Diagnostic: ${JSON.stringify(diagnostic)}`;
           const friendly = permissionDenied
-            ? `Jira permission error: the configured Jira account/token is recognized, but Jira says it cannot create ${typeLabel} issues in project ${projectKey}. Ask a Jira admin to grant this account Browse project and Create issues permission for ${projectKey}. Raw: ${errorText}`
+            ? `Jira permission error: Jira says the configured account cannot create ${typeLabel} issues in project ${projectKey}. Check the account in the diagnostic and grant that exact account Browse project + Create issues for ${projectKey}. Raw: ${errorText}${diagnosticText}`
             : response.status === 401
-            ? `Jira 401: Jira rejected authentication while creating ${typeLabel} in ${projectKey}. Verify the Jira email matches the API token owner; if this is a scoped token, create an unscoped/classic Atlassian API token. Raw: ${errorText}`
+            ? `Jira 401: Jira rejected authentication while creating ${typeLabel} in ${projectKey}. Verify the Jira email matches the API token owner. Raw: ${errorText}${diagnosticText}`
             : response.status === 403
-            ? `Jira 403: account lacks permission to create ${typeLabel} in ${projectKey}. Ask a Jira admin to grant "Browse project" and "Create issues" permission. Raw: ${errorText}`
-            : `Jira ${response.status}: ${errorText}`;
+            ? `Jira 403: account lacks permission to create ${typeLabel} in ${projectKey}. Grant the diagnostic account "Browse project" and "Create issues" permission. Raw: ${errorText}${diagnosticText}`
+            : `Jira ${response.status}: ${errorText}${diagnosticText}`;
           results.push({ issueId: issue.id, error: friendly });
         } else {
           const jiraResponse = await response.json();
