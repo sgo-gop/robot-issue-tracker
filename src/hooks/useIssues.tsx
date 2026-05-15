@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { IssuePriority, IssueCategory } from '@/types/database';
+import { IssuePriority, IssueCategory, RobotType } from '@/types/database';
 import { useToast } from '@/hooks/use-toast';
 
 interface CreateIssueData {
@@ -8,7 +8,7 @@ interface CreateIssueData {
   description: string;
   priority: IssuePriority;
   category: IssueCategory;
-  station_id: string | null;
+  robot_type: RobotType | null;
   software_version_id?: string | null;
   steps_to_reproduce?: string;
   expected_behavior?: string;
@@ -25,7 +25,7 @@ export const useIssues = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('issues')
-        .select(`*, stations (id, name), software_versions (id, version)`)
+        .select(`*, software_versions (id, version)`)
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data;

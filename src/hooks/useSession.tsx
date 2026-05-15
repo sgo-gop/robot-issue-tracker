@@ -2,13 +2,12 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 
 interface SessionUser {
   name: string;
-  stationId: string;
-  stationName: string;
+  robotType: string;
 }
 
 interface SessionContextType {
   user: SessionUser | null;
-  setSession: (name: string, stationId: string, stationName: string) => void;
+  setSession: (name: string, robotType: string) => void;
   clearSession: () => void;
 }
 
@@ -28,8 +27,8 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const setSession = (name: string, stationId: string, stationName: string) => {
-    const sessionUser = { name, stationId, stationName };
+  const setSession = (name: string, robotType: string) => {
+    const sessionUser = { name, robotType };
     setUser(sessionUser);
     sessionStorage.setItem('issueTrackerSession', JSON.stringify(sessionUser));
   };

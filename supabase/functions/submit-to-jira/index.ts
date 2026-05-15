@@ -17,7 +17,7 @@ interface Issue {
   steps_to_reproduce?: string;
   expected_behavior?: string;
   actual_behavior?: string;
-  stations?: { name: string } | null;
+  robot_type?: string | null;
   software_versions?: { version: string } | null;
   created_at: string;
   jira_issue_key?: string | null;
@@ -174,7 +174,7 @@ serve(async (req) => {
         `*Issue ID:* ${issue.issue_number}`,
         `*Category:* ${issue.category}`,
         `*Status:* ${issue.status}`,
-        issue.stations?.name ? `*Station:* ${issue.stations.name}` : null,
+        issue.robot_type ? `*Robot:* ${issue.robot_type}` : null,
         issue.software_versions?.version ? `*Software Version:* ${issue.software_versions.version}` : null,
         `*Created:* ${new Date(issue.created_at).toLocaleString()}`,
         '',
