@@ -330,6 +330,7 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
   };
 
   return (
+    <>
     <Card>
       <CardHeader>
         <CardTitle>Generate Report</CardTitle>
