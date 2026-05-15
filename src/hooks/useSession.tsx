@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode } from 'react';
 
 interface SessionUser {
   name: string;
@@ -14,18 +14,17 @@ interface SessionContextType {
 const SessionContext = createContext<SessionContextType | undefined>(undefined);
 
 export const SessionProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<SessionUser | null>(null);
-
-  useEffect(() => {
+  const [user, setUser] = useState<SessionUser | null>(() => {
+    if (typeof window === 'undefined') return null;
     const stored = sessionStorage.getItem('issueTrackerSession');
-    if (stored) {
-      try {
-        setUser(JSON.parse(stored));
-      } catch {
-        sessionStorage.removeItem('issueTrackerSession');
-      }
+    if (!stored) return null;
+    try {
+      return JSON.parse(stored) as SessionUser;
+    } catch {
+      sessionStorage.removeItem('issueTrackerSession');
+      return null;
     }
-  }, []);
+  });
 
   const setSession = (name: string, robotType: string) => {
     const sessionUser = { name, robotType };
