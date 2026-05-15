@@ -3,7 +3,7 @@ import { useSession } from '@/hooks/useSession';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Bot, LogOut, MapPin } from 'lucide-react';
+import { Bot, LogOut, Cpu } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface DashboardLayoutProps {
@@ -32,8 +32,8 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             <div>
               <h1 className="text-lg font-semibold">Robot Testing Tracker</h1>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <MapPin className="h-3 w-3" />
-                {user?.stationName || 'No Station'}
+                <Cpu className="h-3 w-3" />
+                {user?.robotType || 'No Robot'}
               </p>
             </div>
           </div>
@@ -50,7 +50,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium leading-none">{user?.name}</p>
-                  <p className="text-xs leading-none text-muted-foreground">{user?.stationName}</p>
+                  <p className="text-xs leading-none text-muted-foreground">{user?.robotType}</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
