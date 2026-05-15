@@ -37,14 +37,17 @@ serve(async (req) => {
   }
 
   try {
-    const { issues, team } = await req.json() as { issues: Issue[]; team?: string | null };
+    const { issues, team, projectKey: requestedProjectKey } = await req.json() as { issues: Issue[]; team?: string | null; projectKey?: string | null };
     
     const jiraEmail = Deno.env.get('JIRA_EMAIL');
     const jiraApiToken = Deno.env.get('JIRA_API_TOKEN');
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const jiraDomain = 'neurarobotics.atlassian.net';
-    const projectKey = 'SAIR';
+    const ALLOWED_PROJECT_KEYS = ['SAIR', 'NEURA'];
+    const projectKey = (typeof requestedProjectKey === 'string' && ALLOWED_PROJECT_KEYS.includes(requestedProjectKey.toUpperCase()))
+      ? requestedProjectKey.toUpperCase()
+      : 'SAIR';
 
     if (!jiraEmail || !jiraApiToken) {
       console.error('Missing Jira credentials');

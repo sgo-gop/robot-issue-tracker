@@ -29,6 +29,7 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSubmittingToJira, setIsSubmittingToJira] = useState(false);
   const [jiraTeam, setJiraTeam] = useState('');
+  const [jiraProjectKey, setJiraProjectKey] = useState<'SAIR' | 'NEURA'>('SAIR');
   const [statusFilter, setStatusFilter] = useState<IssueStatus | 'all'>('all');
   const [robotFilter, setRobotFilter] = useState<string>('all');
   const [softwareVersionFilter, setSoftwareVersionFilter] = useState<string>('all');
@@ -273,7 +274,7 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
     setIsSubmittingToJira(true);
     try {
       const { data, error } = await supabase.functions.invoke('submit-to-jira', {
-        body: { issues: unsyncedIssues, team: jiraTeam.trim() || null }
+        body: { issues: unsyncedIssues, team: jiraTeam.trim() || null, projectKey: jiraProjectKey }
       });
 
       if (error) {
@@ -417,6 +418,18 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label>Jira Project</Label>
+            <Select value={jiraProjectKey} onValueChange={(v) => setJiraProjectKey(v as 'SAIR' | 'NEURA')}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="SAIR">SAIR</SelectItem>
+                <SelectItem value="NEURA">NEURA</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="space-y-2">
             <Label>Jira Team ID</Label>
             <Input
