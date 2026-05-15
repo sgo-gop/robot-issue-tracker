@@ -3,11 +3,17 @@ export type IssueStatus = 'open' | 'closed';
 export type IssueCategory = 'hardware' | 'software' | 'mechanical' | 'electrical' | 'other';
 export type AppRole = 'tester' | 'developer';
 
-export interface Station {
-  id: string;
-  name: string;
-  created_at?: string;
-}
+export type RobotType = 'LARA 3' | 'LARA 5' | 'LARA 8' | 'LARA 10' | 'MAIRA M' | 'MAIRA S' | 'MAIRA L';
+
+export const ROBOT_TYPES: RobotType[] = [
+  'LARA 3',
+  'LARA 5',
+  'LARA 8',
+  'LARA 10',
+  'MAIRA M',
+  'MAIRA S',
+  'MAIRA L',
+];
 
 export interface SoftwareVersion {
   id: string;
@@ -24,7 +30,7 @@ export interface Issue {
   priority: IssuePriority;
   status: IssueStatus;
   category: IssueCategory;
-  station_id: string | null;
+  robot_type: RobotType | null;
   software_version_id: string | null;
   steps_to_reproduce: string | null;
   expected_behavior: string | null;
@@ -34,7 +40,6 @@ export interface Issue {
   updated_at: string;
   closed_at: string | null;
   jira_issue_key?: string | null;
-  stations?: { id: string; name: string } | null;
   software_versions?: { id: string; version: string } | null;
 }
 
