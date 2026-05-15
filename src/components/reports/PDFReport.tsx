@@ -284,18 +284,21 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
         throw new Error('No response from Jira');
       }
 
+      const firstFailure = Array.isArray(data.results)
+        ? data.results.find((r: any) => r?.error)?.error
+        : null;
+
       if (data.success === false) {
+        const isTeamError = data.field === 'Team';
         toast({
-          title: 'Jira needs a Team ID',
-          description: data.error || 'Please provide a valid Jira Team ID and retry.',
+          title: isTeamError ? 'Jira needs a Team ID' : 'Jira submission failed',
+          description: isTeamError
+            ? data.error || 'Please provide a valid Jira Team ID and retry.'
+            : firstFailure || data.error || data.message || 'Jira rejected the submission.',
           variant: 'destructive',
         });
         return;
       }
-
-      const firstFailure = Array.isArray(data.results)
-        ? data.results.find((r: any) => r?.error)?.error
-        : null;
 
       toast({
         title: data.failed > 0 ? 'Jira submission finished (with errors)' : 'Submitted to Jira',
