@@ -9,7 +9,6 @@ import { IssueForm } from '@/components/issues/IssueForm';
 import { IssueTable } from '@/components/issues/IssueTable';
 import { PDFReport } from '@/components/reports/PDFReport';
 import { ClearAllIssues } from '@/components/admin/ClearAllIssues';
-import { ManageStations } from '@/components/admin/ManageStations';
 import { ManageSoftwareVersions } from '@/components/admin/ManageSoftwareVersions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -147,7 +146,6 @@ const Index = () => {
                 <CardDescription>View and manage all reported issues</CardDescription>
               </div>
               <div className="flex gap-2 flex-wrap">
-                <ManageStations />
                 <ManageSoftwareVersions />
                 <ClearAllIssues />
               </div>
