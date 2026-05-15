@@ -297,7 +297,10 @@ serve(async (req) => {
         if (!response.ok) {
           const errorText = await response.text();
           console.error(`Jira API error for ${issue.issue_number}:`, response.status, errorText);
-          const friendly = response.status === 401
+          const permissionDenied = /无权|permission|permissions|not permitted|not authorized|cannot create|create issues/i.test(errorText);
+          const friendly = permissionDenied
+            ? `Jira permission error: the configured Jira account/token is recognized, but Jira says it cannot create ${issueTypeName} issues in project ${projectKey}. Ask a Jira admin to grant this account Browse project and Create issues permission for ${projectKey}. Raw: ${errorText}`
+            : response.status === 401
             ? `Jira 401: Jira rejected authentication while creating ${issueTypeName} in ${projectKey}. Verify the Jira email matches the API token owner; if this is a scoped token, create an unscoped/classic Atlassian API token. Raw: ${errorText}`
             : response.status === 403
             ? `Jira 403: account lacks permission to create ${issueTypeName} in ${projectKey}. Ask a Jira admin to grant "Browse project" and "Create issues" permission. Raw: ${errorText}`
