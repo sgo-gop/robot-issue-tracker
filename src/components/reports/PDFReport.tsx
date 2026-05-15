@@ -28,7 +28,7 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
   const queryClient = useQueryClient();
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSubmittingToJira, setIsSubmittingToJira] = useState(false);
-  const [jiraProjectKey, setJiraProjectKey] = useState<'SAIR' | 'NEURA'>('SAIR');
+  const [jiraProjectKey, setJiraProjectKey] = useState<'SUBR' | 'NEURA'>('SUBR');
   const [statusFilter, setStatusFilter] = useState<IssueStatus | 'all'>('all');
   const [robotFilter, setRobotFilter] = useState<string>('all');
   const [softwareVersionFilter, setSoftwareVersionFilter] = useState<string>('all');
@@ -421,12 +421,12 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
 
         <div className="space-y-2">
           <Label>Jira Project</Label>
-          <Select value={jiraProjectKey} onValueChange={(v) => setJiraProjectKey(v as 'SAIR' | 'NEURA')}>
+          <Select value={jiraProjectKey} onValueChange={(v) => setJiraProjectKey(v as 'SUBR' | 'NEURA')}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="SAIR">SAIR</SelectItem>
+              <SelectItem value="SUBR">SUBR</SelectItem>
               <SelectItem value="NEURA">NEURA</SelectItem>
             </SelectContent>
           </Select>

@@ -44,10 +44,10 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const jiraDomain = 'neurarobotics.atlassian.net';
-    const ALLOWED_PROJECT_KEYS = ['SAIR', 'NEURA'];
+    const ALLOWED_PROJECT_KEYS = ['SUBR', 'NEURA'];
     const projectKey = (typeof requestedProjectKey === 'string' && ALLOWED_PROJECT_KEYS.includes(requestedProjectKey.toUpperCase()))
       ? requestedProjectKey.toUpperCase()
-      : 'SAIR';
+      : 'SUBR';
 
     if (!jiraEmail || !jiraApiToken) {
       console.error('Missing Jira credentials');
@@ -83,29 +83,9 @@ serve(async (req) => {
     // on some read endpoints while still being usable for the issue-create endpoint.
     // Let the actual create request determine whether auth, permissions, or fields fail.
 
-    // SAIR uses Bug with rich custom fields per integration guide; NEURA stays as Task.
-    const isSair = projectKey === 'SAIR';
-    const issueTypeName = isSair ? 'Bug' : 'Task';
-
-    // SAIR custom field IDs (from SAIR Jira Integration Guide)
-    const SAIR_FIELDS = {
-      product: 'customfield_10161',
-      controlSoftwareVersion: 'customfield_10506',
-      guiVersion: 'customfield_10507',
-      aiVersion: 'customfield_10508',
-      reproSteps: 'customfield_10509',
-      expectedResults: 'customfield_10704',
-      actualResults: 'customfield_10705',
-    } as const;
-
-    // Map robot_type → SAIR Product option id
-    const productOptionForRobot = (robot?: string | null): string | null => {
-      if (!robot) return null;
-      const r = robot.toUpperCase();
-      if (r.startsWith('LARA')) return '10444'; // LARA Classic
-      if (r.startsWith('MAIRA')) return '10445'; // MAiRA
-      return '10447'; // Other
-    };
+    // SUBR and NEURA both use the standard Task issue type with no custom fields.
+    const isSubr = projectKey === 'SUBR';
+    const issueTypeName = 'Task';
 
     // Map our priority → Jira priority name
     const jiraPriorityName = (p?: string | null): string => {
@@ -142,9 +122,8 @@ serve(async (req) => {
     let teamFieldKey = 'customfield_10001';
     let isTeamRequired = false;
 
-    // SAIR does not use the Team field — skip discovery & requirement check entirely.
-    // Only NEURA needs a Team ID.
-    if (!isSair) try {
+    // SUBR does not use the Team field — only NEURA needs a Team ID.
+    if (!isSubr) try {
       const metaUrl = `https://${jiraDomain}/rest/api/3/issue/createmeta?projectKeys=${projectKey}&issuetypeNames=${encodeURIComponent(issueTypeName)}&expand=projects.issuetypes.fields`;
       const metaResp = await fetch(metaUrl, {
         method: 'GET',
@@ -176,7 +155,7 @@ serve(async (req) => {
       console.warn('Error fetching Jira create metadata:', e);
     }
 
-    const teamId = isSair ? null : extractTeamId(teamInput);
+    const teamId = isSubr ? null : extractTeamId(teamInput);
 
     if (isTeamRequired && !teamId) {
       return new Response(
@@ -267,17 +246,6 @@ serve(async (req) => {
         labels: [issue.category, 'lovable-import'],
         ...(teamId ? { [teamFieldKey]: teamId } : {}),
       };
-
-      if (isSair) {
-        const productId = productOptionForRobot(issue.robot_type);
-        if (productId) baseFields[SAIR_FIELDS.product] = { id: productId };
-        if (issue.software_versions?.version) {
-          baseFields[SAIR_FIELDS.controlSoftwareVersion] = issue.software_versions.version;
-        }
-        if (issue.steps_to_reproduce) baseFields[SAIR_FIELDS.reproSteps] = issue.steps_to_reproduce;
-        if (issue.expected_behavior) baseFields[SAIR_FIELDS.expectedResults] = issue.expected_behavior;
-        if (issue.actual_behavior) baseFields[SAIR_FIELDS.actualResults] = issue.actual_behavior;
-      }
 
       const jiraPayload = { fields: baseFields };
 
