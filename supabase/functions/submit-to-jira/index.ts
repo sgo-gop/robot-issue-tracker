@@ -128,8 +128,9 @@ serve(async (req) => {
     let teamFieldKey = 'customfield_10001';
     let isTeamRequired = false;
 
-    // Discover the actual Team field key and whether it is required
-    try {
+    // SAIR does not use the Team field — skip discovery & requirement check entirely.
+    // Only NEURA needs a Team ID.
+    if (!isSair) try {
       const metaUrl = `https://${jiraDomain}/rest/api/3/issue/createmeta?projectKeys=${projectKey}&issuetypeNames=${encodeURIComponent(issueTypeName)}&expand=projects.issuetypes.fields`;
       const metaResp = await fetch(metaUrl, {
         method: 'GET',
@@ -161,7 +162,7 @@ serve(async (req) => {
       console.warn('Error fetching Jira create metadata:', e);
     }
 
-    const teamId = extractTeamId(teamInput);
+    const teamId = isSair ? null : extractTeamId(teamInput);
 
     if (isTeamRequired && !teamId) {
       return new Response(
