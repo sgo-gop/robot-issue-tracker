@@ -83,10 +83,32 @@ serve(async (req) => {
     // on some read endpoints while still being usable for the issue-create endpoint.
     // Let the actual create request determine whether auth, permissions, or fields fail.
 
-    // SUBR uses issuetype id 10009 (per Jira admin); NEURA stays as Task.
+    // SUBR uses issuetype id 10009 (Bug, per SUBR spec); NEURA stays as Task.
     const isSubr = projectKey === 'SUBR';
     const issueTypeName = 'Task'; // used for NEURA + error messages
     const subrIssueTypeId = '10009';
+
+    // SUBR custom field IDs (from SUBR spec)
+    const SUBR_FIELDS = {
+      product: 'customfield_10161',
+      aiVersion: 'customfield_10508',
+      driveFirmware: 'customfield_12816',
+      safetyLogic: 'customfield_12817',
+      safetyFirmware: 'customfield_12818',
+    } as const;
+
+    // Map robot_type → SUBR Product option id
+    const subrProductOptionForRobot = (robot?: string | null): string | null => {
+      if (!robot) return null;
+      const r = robot.toUpperCase();
+      if (r.includes('LARA')) return '10444';        // LARA Classic
+      if (r.includes('MAIRA')) return '10445';       // MAiRA
+      if (r.includes('MAV')) return '10446';         // MAV
+      if (r.includes('4NE-1') || r.includes('4NE1')) return '13673'; // 4NE-1
+      if (r.includes('MIPA')) return '13672';        // MiPA
+      if (r.includes('VALUE')) return '13674';       // Value Line
+      return '10447';                                 // Other
+    };
 
     // Map our priority → Jira priority id (SUBR) / name (NEURA)
     const jiraPriorityId = (p?: string | null): string => {
@@ -258,6 +280,14 @@ serve(async (req) => {
         ...(isSubr ? {} : { labels: [issue.category, 'lovable-import'] }),
         ...(teamId ? { [teamFieldKey]: teamId } : {}),
       };
+
+      if (isSubr) {
+        const productId = subrProductOptionForRobot(issue.robot_type);
+        if (productId) baseFields[SUBR_FIELDS.product] = { id: productId };
+        if (issue.software_versions?.version) {
+          baseFields[SUBR_FIELDS.aiVersion] = issue.software_versions.version;
+        }
+      }
 
       const jiraPayload = { fields: baseFields };
 
