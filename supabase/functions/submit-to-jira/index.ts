@@ -69,7 +69,41 @@ serve(async (req) => {
     const auth = btoa(`${jiraEmail}:${jiraApiToken}`);
     const results: { issueId: string; jiraKey?: string; error?: string; attachmentsUploaded?: number; skipped?: boolean }[] = [];
 
-    const issueTypeName = 'Task';
+    // SAIR uses Bug with rich custom fields per integration guide; NEURA stays as Task.
+    const isSair = projectKey === 'SAIR';
+    const issueTypeName = isSair ? 'Bug' : 'Task';
+
+    // SAIR custom field IDs (from SAIR Jira Integration Guide)
+    const SAIR_FIELDS = {
+      product: 'customfield_10161',
+      controlSoftwareVersion: 'customfield_10506',
+      guiVersion: 'customfield_10507',
+      aiVersion: 'customfield_10508',
+      reproSteps: 'customfield_10509',
+      expectedResults: 'customfield_10704',
+      actualResults: 'customfield_10705',
+    } as const;
+
+    // Map robot_type → SAIR Product option id
+    const productOptionForRobot = (robot?: string | null): string | null => {
+      if (!robot) return null;
+      const r = robot.toUpperCase();
+      if (r.startsWith('LARA')) return '10444'; // LARA Classic
+      if (r.startsWith('MAIRA')) return '10445'; // MAiRA
+      return '10447'; // Other
+    };
+
+    // Map our priority → Jira priority name
+    const jiraPriorityName = (p?: string | null): string => {
+      switch ((p || '').toLowerCase()) {
+        case 'critical': return 'Highest';
+        case 'high': return 'High';
+        case 'medium': return 'Medium';
+        case 'low': return 'Low';
+        default: return 'Medium';
+      }
+    };
+
     // Default Team ID for NEURA project
     const DEFAULT_TEAM_ID = 'fe36c533-9a84-4d9b-b674-68079b4c4073';
     const teamInput = typeof team === 'string' && team.trim() ? team.trim() : DEFAULT_TEAM_ID;
@@ -195,30 +229,42 @@ serve(async (req) => {
         descriptionParts.push('', '*Actual Behavior:*', issue.actual_behavior);
       }
 
-      const jiraPayload = {
-        fields: {
-          project: { key: projectKey },
-          summary: `[${issue.issue_number}] ${issue.title}`,
-          description: {
-            type: 'doc',
-            version: 1,
-            content: [
-              {
-                type: 'paragraph',
-                content: [
-                  {
-                    type: 'text',
-                    text: descriptionParts.filter(Boolean).join('\n'),
-                  },
-                ],
-              },
-            ],
-          },
-          issuetype: { name: issueTypeName },
-          ...(teamId ? { [teamFieldKey]: teamId } : {}),
-          labels: [issue.category, 'lovable-import'],
+      const baseFields: Record<string, unknown> = {
+        project: { key: projectKey },
+        summary: `[${issue.issue_number}] ${issue.title}`,
+        description: {
+          type: 'doc',
+          version: 1,
+          content: [
+            {
+              type: 'paragraph',
+              content: [
+                {
+                  type: 'text',
+                  text: descriptionParts.filter(Boolean).join('\n'),
+                },
+              ],
+            },
+          ],
         },
+        issuetype: { name: issueTypeName },
+        priority: { name: jiraPriorityName(issue.priority) },
+        labels: [issue.category, 'lovable-import'],
+        ...(teamId ? { [teamFieldKey]: teamId } : {}),
       };
+
+      if (isSair) {
+        const productId = productOptionForRobot(issue.robot_type);
+        if (productId) baseFields[SAIR_FIELDS.product] = { id: productId };
+        if (issue.software_versions?.version) {
+          baseFields[SAIR_FIELDS.controlSoftwareVersion] = issue.software_versions.version;
+        }
+        if (issue.steps_to_reproduce) baseFields[SAIR_FIELDS.reproSteps] = issue.steps_to_reproduce;
+        if (issue.expected_behavior) baseFields[SAIR_FIELDS.expectedResults] = issue.expected_behavior;
+        if (issue.actual_behavior) baseFields[SAIR_FIELDS.actualResults] = issue.actual_behavior;
+      }
+
+      const jiraPayload = { fields: baseFields };
 
       console.log(`Submitting issue ${issue.issue_number} to Jira...`);
 
