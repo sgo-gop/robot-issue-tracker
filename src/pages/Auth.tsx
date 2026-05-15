@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSession } from '@/hooks/useSession';
-import { useStations } from '@/hooks/useStations';
+import { ROBOT_TYPES } from '@/types/database';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,11 +13,10 @@ import { useToast } from '@/hooks/use-toast';
 const Auth = () => {
   const navigate = useNavigate();
   const { setSession } = useSession();
-  const { stations, isLoading: stationsLoading } = useStations();
   const { toast } = useToast();
   
   const [name, setName] = useState('');
-  const [stationId, setStationId] = useState('');
+  const [robotType, setRobotType] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -34,20 +33,17 @@ const Auth = () => {
       return;
     }
     
-    if (!stationId) {
-      toast({ title: 'Please select your station', variant: 'destructive' });
+    if (!robotType) {
+      toast({ title: 'Please select your robot type', variant: 'destructive' });
       return;
     }
 
     setIsSubmitting(true);
-    
-    const station = stations.find(s => s.id === stationId);
-    if (station) {
-      setSession(trimmedName, stationId, station.name);
-      toast({ title: `Welcome, ${trimmedName}!` });
-      navigate('/');
-    }
-    
+
+    setSession(trimmedName, robotType);
+    toast({ title: `Welcome, ${trimmedName}!` });
+    navigate('/');
+
     setIsSubmitting(false);
   };
 
@@ -59,7 +55,7 @@ const Auth = () => {
             <Bot className="h-8 w-8" />
           </div>
           <CardTitle className="text-2xl">Robot Testing Tracker</CardTitle>
-          <CardDescription>Enter your name and select your station to begin</CardDescription>
+          <CardDescription>Enter your name and select your robot type to begin</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -77,15 +73,15 @@ const Auth = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="station">Your Station</Label>
-              <Select value={stationId} onValueChange={setStationId} required>
-                <SelectTrigger id="station">
-                  <SelectValue placeholder={stationsLoading ? 'Loading stations...' : 'Select your station'} />
+              <Label htmlFor="robot-type">Robot Type</Label>
+              <Select value={robotType} onValueChange={setRobotType} required>
+                <SelectTrigger id="robot-type">
+                  <SelectValue placeholder="Select your robot type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {stations.map((station) => (
-                    <SelectItem key={station.id} value={station.id}>
-                      {station.name}
+                  {ROBOT_TYPES.map((rt) => (
+                    <SelectItem key={rt} value={rt}>
+                      {rt}
                     </SelectItem>
                   ))}
                 </SelectContent>
