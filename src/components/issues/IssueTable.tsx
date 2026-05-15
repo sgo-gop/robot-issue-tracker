@@ -41,8 +41,8 @@ const IssueDetails = ({ issue }: { issue: Issue }) => {
           <CategoryBadge category={issue.category} />
         </div>
         <div>
-          <p className="text-sm font-medium text-muted-foreground">Station</p>
-          <p>{issue.stations?.name || 'Not assigned'}</p>
+          <p className="text-sm font-medium text-muted-foreground">Robot Type</p>
+          <p>{issue.robot_type || 'Not assigned'}</p>
         </div>
         <div>
           <p className="text-sm font-medium text-muted-foreground">Created</p>
@@ -191,7 +191,7 @@ export const IssueTable = ({ issues, showActions = false, onCloseIssue, isClosin
               <TableHead className="w-[100px]">Priority</TableHead>
               <TableHead className="w-[100px]">Status</TableHead>
               <TableHead className="w-[110px]">Category</TableHead>
-              <TableHead className="w-[120px]">Station</TableHead>
+              <TableHead className="w-[120px]">Robot</TableHead>
               <TableHead className="w-[150px]">Created</TableHead>
               <TableHead className="w-[100px]">Actions</TableHead>
             </TableRow>
@@ -211,7 +211,7 @@ export const IssueTable = ({ issues, showActions = false, onCloseIssue, isClosin
                   <TableCell><PriorityBadge priority={issue.priority} /></TableCell>
                   <TableCell><StatusBadge status={issue.status} /></TableCell>
                   <TableCell><CategoryBadge category={issue.category} /></TableCell>
-                  <TableCell className="text-sm">{issue.stations?.name || '-'}</TableCell>
+                  <TableCell className="text-sm">{issue.robot_type || '-'}</TableCell>
                   <TableCell className="text-sm">{format(new Date(issue.created_at), 'MMM d, yyyy')}</TableCell>
                   <TableCell>
                     <div className="flex gap-1">
