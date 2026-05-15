@@ -11,7 +11,9 @@ import { Issue, IssueStatus, IssueAttachment } from '@/types/database';
 import { ROBOT_TYPES } from '@/types/database';
 import { useSoftwareVersions } from '@/hooks/useSoftwareVersions';
 import { useAuth } from '@/hooks/useAuth';
-import { FileDown, CalendarIcon, Loader2, Send } from 'lucide-react';
+import { FileDown, CalendarIcon, Loader2, Send, Copy, Check } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -29,6 +31,8 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSubmittingToJira, setIsSubmittingToJira] = useState(false);
   const [jiraProjectKey, setJiraProjectKey] = useState<'SUBR' | 'NEURA'>('SUBR');
+  const [errorDialog, setErrorDialog] = useState<{ title: string; message: string } | null>(null);
+  const [copied, setCopied] = useState(false);
   const [statusFilter, setStatusFilter] = useState<IssueStatus | 'all'>('all');
   const [robotFilter, setRobotFilter] = useState<string>('all');
   const [softwareVersionFilter, setSoftwareVersionFilter] = useState<string>('all');
@@ -290,30 +294,35 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
 
       if (data.success === false) {
         const isTeamError = data.field === 'Team';
-        toast({
+        const message = isTeamError
+          ? data.error || 'Please provide a valid Jira Team ID and retry.'
+          : firstFailure || data.error || data.message || 'Jira rejected the submission.';
+        setErrorDialog({
           title: isTeamError ? 'Jira needs a Team ID' : 'Jira submission failed',
-          description: isTeamError
-            ? data.error || 'Please provide a valid Jira Team ID and retry.'
-            : firstFailure || data.error || data.message || 'Jira rejected the submission.',
-          variant: 'destructive',
+          message: String(message),
         });
         return;
       }
 
-      toast({
-        title: data.failed > 0 ? 'Jira submission finished (with errors)' : 'Submitted to Jira',
-        description: firstFailure ? `${data.message}\n\nFirst error: ${String(firstFailure).slice(0, 200)}` : data.message,
-        variant: data.failed > 0 ? 'destructive' : undefined,
-      });
+      if (data.failed > 0 && firstFailure) {
+        setErrorDialog({
+          title: 'Jira submission finished (with errors)',
+          message: `${data.message}\n\nFirst error:\n${String(firstFailure)}`,
+        });
+      } else {
+        toast({
+          title: 'Submitted to Jira',
+          description: data.message,
+        });
+      }
 
       // Refresh issues to update jira_issue_key values
       queryClient.invalidateQueries({ queryKey: ['issues'] });
     } catch (error) {
       console.error('Error submitting to Jira:', error);
-      toast({
+      setErrorDialog({
         title: 'Error submitting to Jira',
-        description: error instanceof Error ? error.message : 'Unknown error',
-        variant: 'destructive',
+        message: error instanceof Error ? (error.stack || error.message) : String(error),
       });
     } finally {
       setIsSubmittingToJira(false);
@@ -321,6 +330,7 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
   };
 
   return (
+    <>
     <Card>
       <CardHeader>
         <CardTitle>Generate Report</CardTitle>
@@ -469,5 +479,40 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
         </div>
       </CardContent>
     </Card>
+    {errorDialog && (
+      <Dialog open onOpenChange={(open) => { if (!open) { setErrorDialog(null); setCopied(false); } }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{errorDialog.title}</DialogTitle>
+            <DialogDescription>You can copy the full error below to share with the team.</DialogDescription>
+          </DialogHeader>
+          <Textarea
+            readOnly
+            value={errorDialog.message}
+            className="font-mono text-xs min-h-[200px] max-h-[400px]"
+            onFocus={(e) => e.currentTarget.select()}
+          />
+          <DialogFooter>
+            <Button
+              variant="secondary"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(errorDialog.message);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                } catch {
+                  toast({ title: 'Copy failed', description: 'Select and copy manually.', variant: 'destructive' });
+                }
+              }}
+            >
+              {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+              {copied ? 'Copied' : 'Copy error'}
+            </Button>
+            <Button onClick={() => { setErrorDialog(null); setCopied(false); }}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    )}
+    </>
   );
 };
