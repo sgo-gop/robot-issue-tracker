@@ -83,11 +83,21 @@ serve(async (req) => {
     // on some read endpoints while still being usable for the issue-create endpoint.
     // Let the actual create request determine whether auth, permissions, or fields fail.
 
-    // SUBR and NEURA both use the standard Task issue type with no custom fields.
+    // SUBR uses issuetype id 10009 (per Jira admin); NEURA stays as Task.
     const isSubr = projectKey === 'SUBR';
-    const issueTypeName = 'Task';
+    const issueTypeName = 'Task'; // used for NEURA + error messages
+    const subrIssueTypeId = '10009';
 
-    // Map our priority → Jira priority name
+    // Map our priority → Jira priority id (SUBR) / name (NEURA)
+    const jiraPriorityId = (p?: string | null): string => {
+      switch ((p || '').toLowerCase()) {
+        case 'critical': return '1'; // Highest
+        case 'high': return '2';     // High
+        case 'medium': return '3';   // Medium
+        case 'low': return '4';      // Low
+        default: return '3';
+      }
+    };
     const jiraPriorityName = (p?: string | null): string => {
       switch ((p || '').toLowerCase()) {
         case 'critical': return 'Highest';
@@ -241,9 +251,11 @@ serve(async (req) => {
             },
           ],
         },
-        issuetype: { name: issueTypeName },
-        priority: { name: jiraPriorityName(issue.priority) },
-        labels: [issue.category, 'lovable-import'],
+        issuetype: isSubr ? { id: subrIssueTypeId } : { name: issueTypeName },
+        priority: isSubr
+          ? { id: jiraPriorityId(issue.priority) }
+          : { name: jiraPriorityName(issue.priority) },
+        ...(isSubr ? {} : { labels: [issue.category, 'lovable-import'] }),
         ...(teamId ? { [teamFieldKey]: teamId } : {}),
       };
 
