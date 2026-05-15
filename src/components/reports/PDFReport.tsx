@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Issue, IssueStatus, IssueAttachment } from '@/types/database';
-import { useStations } from '@/hooks/useStations';
+import { ROBOT_TYPES } from '@/types/database';
 import { useSoftwareVersions } from '@/hooks/useSoftwareVersions';
 import { useAuth } from '@/hooks/useAuth';
 import { FileDown, CalendarIcon, Loader2, Send } from 'lucide-react';
@@ -22,7 +22,6 @@ interface PDFReportProps {
 }
 
 export const PDFReport = ({ issues }: PDFReportProps) => {
-  const { stations } = useStations();
   const { versions } = useSoftwareVersions();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -31,19 +30,19 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
   const [isSubmittingToJira, setIsSubmittingToJira] = useState(false);
   const [jiraTeam, setJiraTeam] = useState('');
   const [statusFilter, setStatusFilter] = useState<IssueStatus | 'all'>('all');
-  const [stationFilter, setStationFilter] = useState<string>('all');
+  const [robotFilter, setRobotFilter] = useState<string>('all');
   const [softwareVersionFilter, setSoftwareVersionFilter] = useState<string>('all');
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
 
   const filteredIssues = issues.filter((issue) => {
     const matchesStatus = statusFilter === 'all' || issue.status === statusFilter;
-    const matchesStation = stationFilter === 'all' || issue.station_id === stationFilter;
+    const matchesRobot = robotFilter === 'all' || issue.robot_type === robotFilter;
     const matchesSoftwareVersion = softwareVersionFilter === 'all' || issue.software_version_id === softwareVersionFilter;
     const issueDate = new Date(issue.created_at);
     const matchesStart = !startDate || issueDate >= startDate;
     const matchesEnd = !endDate || issueDate <= endDate;
-    return matchesStatus && matchesStation && matchesSoftwareVersion && matchesStart && matchesEnd;
+    return matchesStatus && matchesRobot && matchesSoftwareVersion && matchesStart && matchesEnd;
   });
 
   // Get the selected software version name
@@ -184,8 +183,8 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
             
             <div class="issue-grid">
               <div class="issue-field">
-                <div class="issue-field-label">Station</div>
-                <div class="issue-field-value">${issue.stations?.name || 'Not assigned'}</div>
+                <div class="issue-field-label">Robot</div>
+                <div class="issue-field-value">${issue.robot_type || 'Not assigned'}</div>
               </div>
               <div class="issue-field">
                 <div class="issue-field-label">Created</div>
@@ -341,16 +340,16 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
           </div>
 
           <div className="space-y-2">
-            <Label>Station</Label>
-            <Select value={stationFilter} onValueChange={setStationFilter}>
+            <Label>Robot Type</Label>
+            <Select value={robotFilter} onValueChange={setRobotFilter}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Stations</SelectItem>
-                {stations.map((station) => (
-                  <SelectItem key={station.id} value={station.id}>
-                    {station.name}
+                <SelectItem value="all">All Robots</SelectItem>
+                {ROBOT_TYPES.map((rt) => (
+                  <SelectItem key={rt} value={rt}>
+                    {rt}
                   </SelectItem>
                 ))}
               </SelectContent>
