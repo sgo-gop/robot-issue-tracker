@@ -9,7 +9,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { IssuePriority, IssueCategory, RobotType, ROBOT_TYPES, OTHER_EQUIPMENT } from '@/types/database';
 import { Camera, Loader2, X, Upload } from 'lucide-react';
-import { VoiceAssistant } from './VoiceAssistant';
 import { VersionCombobox } from './VersionCombobox';
 import { FieldVoiceInput } from './FieldVoiceInput';
 
@@ -99,24 +98,6 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
     onSuccess?.();
   };
 
-  const handleVoiceParsed = (data: {
-    title: string;
-    description: string;
-    priority: IssuePriority;
-    category: IssueCategory;
-    steps_to_reproduce: string;
-    expected_behavior: string;
-    actual_behavior: string;
-  }) => {
-    if (data.title) setTitle(data.title);
-    if (data.description) setDescription(data.description);
-    if (data.priority) setPriority(data.priority);
-    if (data.category) setCategory(data.category);
-    if (data.steps_to_reproduce) setStepsToReproduce(data.steps_to_reproduce);
-    if (data.expected_behavior) setExpectedBehavior(data.expected_behavior);
-    if (data.actual_behavior) setActualBehavior(data.actual_behavior);
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -127,7 +108,6 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
               Reporting as <span className="font-medium">{user?.name}</span> on <span className="font-medium">{user?.robotType}</span>
             </CardDescription>
           </div>
-          <VoiceAssistant onParsed={handleVoiceParsed} />
         </div>
       </CardHeader>
       <CardContent>
