@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -65,26 +65,12 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
   const unsyncedIssues = filteredIssues.filter((issue) => !issue.jira_issue_key);
   const alreadySyncedCount = filteredIssues.length - unsyncedIssues.length;
 
-  // Keep selection in sync with available unsynced issues (default: all selected)
+  // Default selection: all unsynced issues whenever the set changes
   const unsyncedIdsKey = unsyncedIssues.map((i) => i.id).join(',');
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useState(() => {
+  useEffect(() => {
     setSelectedJiraIds(new Set(unsyncedIssues.map((i) => i.id)));
-    return null;
-  });
-  // Reset when the set of unsynced issues changes
-  // (avoid stale selections referencing already-synced issues)
-  if (
-    selectedJiraIds.size > 0 &&
-    Array.from(selectedJiraIds).some((id) => !unsyncedIssues.find((i) => i.id === id))
-  ) {
-    // recompute synchronously
-    const next = new Set(Array.from(selectedJiraIds).filter((id) => unsyncedIssues.find((i) => i.id === id)));
-    if (next.size !== selectedJiraIds.size) {
-      // schedule update
-      queueMicrotask(() => setSelectedJiraIds(next));
-    }
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unsyncedIdsKey]);
 
   const toggleIssueSelection = (id: string, checked: boolean) => {
     setSelectedJiraIds((prev) => {
