@@ -339,9 +339,12 @@ serve(async (req) => {
       if (isSair) {
         const productId = sairProductOptionForRobot(issue.robot_type);
         if (productId) baseFields[SAIR_FIELDS.product] = { id: productId };
-        if (issue.software_versions?.version) {
-          baseFields[SAIR_FIELDS.aiVersion] = issue.software_versions.version;
-        }
+        // Jira requires Control Software Version. We only track one version in
+        // the app, so use it for control/gui/ai. Fallback to "N/A" if missing.
+        const versionValue = issue.software_versions?.version || 'N/A';
+        baseFields[SAIR_FIELDS.controlSoftwareVersion] = versionValue;
+        baseFields[SAIR_FIELDS.guiVersion] = versionValue;
+        baseFields[SAIR_FIELDS.aiVersion] = versionValue;
         const toAdf = (text: string) => ({
           type: 'doc',
           version: 1,
