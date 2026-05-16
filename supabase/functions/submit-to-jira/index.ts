@@ -44,7 +44,7 @@ serve(async (req) => {
   }
 
   try {
-    const { issues, team, projectKey: requestedProjectKey } = await req.json() as { issues: Issue[]; team?: string | null; projectKey?: string | null };
+    const { issues, team, projectKey: requestedProjectKey, reporterName } = await req.json() as { issues: Issue[]; team?: string | null; projectKey?: string | null; reporterName?: string | null };
     
     const jiraEmail = Deno.env.get('JIRA_EMAIL');
     const jiraApiToken = Deno.env.get('JIRA_API_TOKEN');
