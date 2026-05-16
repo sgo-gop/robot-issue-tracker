@@ -11,6 +11,7 @@ import { Issue, IssueStatus, IssueAttachment } from '@/types/database';
 import { ROBOT_TYPES } from '@/types/database';
 import { useSoftwareVersions } from '@/hooks/useSoftwareVersions';
 import { useAuth } from '@/hooks/useAuth';
+import { useSession } from '@/hooks/useSession';
 import { FileDown, CalendarIcon, Loader2, Send, Copy, Check } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
