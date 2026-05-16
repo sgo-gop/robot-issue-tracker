@@ -11,6 +11,7 @@ import { IssuePriority, IssueCategory, RobotType, ROBOT_TYPES, OTHER_EQUIPMENT }
 import { Camera, Loader2, X, Upload } from 'lucide-react';
 import { VoiceAssistant } from './VoiceAssistant';
 import { VersionCombobox } from './VersionCombobox';
+import { FieldVoiceInput } from './FieldVoiceInput';
 
 interface IssueFormProps {
   onSuccess?: () => void;
@@ -239,7 +240,10 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description *</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="description">Description *</Label>
+              <FieldVoiceInput value={description} onChange={setDescription} />
+            </div>
             <Textarea
               id="description"
               placeholder="Detailed description of the issue..."
@@ -252,7 +256,10 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="steps">Steps to Reproduce</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="steps">Steps to Reproduce</Label>
+              <FieldVoiceInput value={stepsToReproduce} onChange={setStepsToReproduce} />
+            </div>
             <Textarea
               id="steps"
               placeholder="1. First step&#10;2. Second step&#10;3. ..."
@@ -265,7 +272,10 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="expected">Expected Behavior</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="expected">Expected Behavior</Label>
+                <FieldVoiceInput value={expectedBehavior} onChange={setExpectedBehavior} />
+              </div>
               <Textarea
                 id="expected"
                 placeholder="What should happen?"
@@ -277,7 +287,10 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="actual">Actual Behavior</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="actual">Actual Behavior</Label>
+                <FieldVoiceInput value={actualBehavior} onChange={setActualBehavior} />
+              </div>
               <Textarea
                 id="actual"
                 placeholder="What actually happened?"
