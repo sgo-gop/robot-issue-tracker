@@ -54,14 +54,18 @@ export type Database = {
           closed_at: string | null
           created_at: string
           description: string
+          drive_firmware_version_id: string | null
           expected_behavior: string | null
           gui_version_id: string | null
           id: string
           issue_number: string
           jira_issue_key: string | null
+          other_equipment: string | null
           priority: Database["public"]["Enums"]["issue_priority"]
           reporter_id: string | null
           robot_type: Database["public"]["Enums"]["robot_type"] | null
+          safety_firmware_version_id: string | null
+          safety_logic_version_id: string | null
           software_version_id: string | null
           status: Database["public"]["Enums"]["issue_status"]
           steps_to_reproduce: string | null
@@ -75,14 +79,18 @@ export type Database = {
           closed_at?: string | null
           created_at?: string
           description: string
+          drive_firmware_version_id?: string | null
           expected_behavior?: string | null
           gui_version_id?: string | null
           id?: string
           issue_number: string
           jira_issue_key?: string | null
+          other_equipment?: string | null
           priority?: Database["public"]["Enums"]["issue_priority"]
           reporter_id?: string | null
           robot_type?: Database["public"]["Enums"]["robot_type"] | null
+          safety_firmware_version_id?: string | null
+          safety_logic_version_id?: string | null
           software_version_id?: string | null
           status?: Database["public"]["Enums"]["issue_status"]
           steps_to_reproduce?: string | null
@@ -96,14 +104,18 @@ export type Database = {
           closed_at?: string | null
           created_at?: string
           description?: string
+          drive_firmware_version_id?: string | null
           expected_behavior?: string | null
           gui_version_id?: string | null
           id?: string
           issue_number?: string
           jira_issue_key?: string | null
+          other_equipment?: string | null
           priority?: Database["public"]["Enums"]["issue_priority"]
           reporter_id?: string | null
           robot_type?: Database["public"]["Enums"]["robot_type"] | null
+          safety_firmware_version_id?: string | null
+          safety_logic_version_id?: string | null
           software_version_id?: string | null
           status?: Database["public"]["Enums"]["issue_status"]
           steps_to_reproduce?: string | null

@@ -23,7 +23,21 @@ export interface SoftwareVersion {
   version_type?: VersionType;
 }
 
-export type VersionType = 'software' | 'gui' | 'ai';
+export type VersionType =
+  | 'software'
+  | 'gui'
+  | 'ai'
+  | 'drive_firmware'
+  | 'safety_logic'
+  | 'safety_firmware';
+
+export type OtherEquipment = 'Teach Pendant' | 'ControlBox' | 'Value Line';
+
+export const OTHER_EQUIPMENT: OtherEquipment[] = [
+  'Teach Pendant',
+  'ControlBox',
+  'Value Line',
+];
 
 export interface Issue {
   id: string;
