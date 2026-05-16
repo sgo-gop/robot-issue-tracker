@@ -139,14 +139,14 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="title">Issue Title *</Label>
+              <Label htmlFor="title" className={errors.title ? 'text-destructive' : ''}>Issue Title *</Label>
               <Input
                 id="title"
                 placeholder="Brief description of the issue"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => { setTitle(e.target.value); if (errors.title) setErrors((prev) => ({ ...prev, title: false })); }}
                 maxLength={200}
-                required
+                className={errors.title ? 'border-destructive focus-visible:ring-destructive' : ''}
               />
             </div>
 
