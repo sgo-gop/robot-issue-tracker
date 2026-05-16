@@ -11,6 +11,7 @@ import { Issue, IssueStatus, IssueAttachment } from '@/types/database';
 import { ROBOT_TYPES } from '@/types/database';
 import { useSoftwareVersions } from '@/hooks/useSoftwareVersions';
 import { useAuth } from '@/hooks/useAuth';
+import { useSession } from '@/hooks/useSession';
 import { FileDown, CalendarIcon, Loader2, Send, Copy, Check } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -25,7 +26,8 @@ interface PDFReportProps {
 
 export const PDFReport = ({ issues }: PDFReportProps) => {
   const { versions } = useSoftwareVersions();
-  const { user } = useAuth();
+  const { user: authUser } = useAuth();
+  const { user: sessionUser } = useSession();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isGenerating, setIsGenerating] = useState(false);
@@ -54,8 +56,8 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
     ? versions.find(v => v.id === softwareVersionFilter)?.version 
     : null;
 
-  // Get the user's name from metadata or email
-  const reporterName = user?.user_metadata?.full_name || user?.email || 'Unknown User';
+  // Get the current user's name from auth or session
+  const reporterName = authUser?.user_metadata?.full_name || authUser?.email || sessionUser?.name || 'Unknown User';
 
   // Issues that haven't been synced to Jira yet
   const unsyncedIssues = filteredIssues.filter((issue) => !issue.jira_issue_key);
@@ -324,7 +326,7 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
         safety_firmware_version: i.safety_firmware_version_id ? versionMap[i.safety_firmware_version_id] || null : null,
       }));
       const { data, error } = await supabase.functions.invoke('submit-to-jira', {
-        body: { issues: enrichedIssues, projectKey: jiraProjectKey }
+        body: { issues: enrichedIssues, projectKey: jiraProjectKey, reporterName }
       });
 
       if (error) {

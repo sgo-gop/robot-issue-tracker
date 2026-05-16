@@ -44,7 +44,7 @@ serve(async (req) => {
   }
 
   try {
-    const { issues, team, projectKey: requestedProjectKey } = await req.json() as { issues: Issue[]; team?: string | null; projectKey?: string | null };
+    const { issues, team, projectKey: requestedProjectKey, reporterName } = await req.json() as { issues: Issue[]; team?: string | null; projectKey?: string | null; reporterName?: string | null };
     
     const jiraEmail = Deno.env.get('JIRA_EMAIL');
     const jiraApiToken = Deno.env.get('JIRA_API_TOKEN');
@@ -125,6 +125,19 @@ serve(async (req) => {
 
       return diagnostic;
     };
+
+    // Sanitize a name into a Jira-safe label
+    const toJiraLabel = (name: string | null | undefined): string | null => {
+      if (!name || !name.trim()) return null;
+      return name
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .slice(0, 100);
+    };
+
+    const reporterLabel = toJiraLabel(reporterName);
 
     // Safe credential metadata logging (never log full token).
     console.log('Jira config:', {
@@ -352,7 +365,7 @@ serve(async (req) => {
         priority: isSair
           ? { id: jiraPriorityId(issue.priority) }
           : { name: jiraPriorityName(issue.priority) },
-        labels: ['RobotTestingTracker', ...(isSair ? [] : [issue.category, 'lovable-import'])],
+        labels: ['RobotTestingTracker', ...(reporterLabel ? [reporterLabel] : []), ...(isSair ? [] : [issue.category, 'lovable-import'])],
         ...(teamId ? { [teamFieldKey]: teamId } : {}),
       };
 
