@@ -534,6 +534,48 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
           </p>
         </div>
 
+        {unsyncedIssues.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>Select issues to submit to Jira</Label>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="select-all-jira"
+                  checked={selectedJiraIds.size === unsyncedIssues.length && unsyncedIssues.length > 0}
+                  onCheckedChange={(c) => toggleSelectAll(Boolean(c))}
+                />
+                <label htmlFor="select-all-jira" className="text-xs text-muted-foreground cursor-pointer">
+                  Select all ({selectedJiraIds.size}/{unsyncedIssues.length})
+                </label>
+              </div>
+            </div>
+            <div className="max-h-64 overflow-y-auto rounded-md border divide-y">
+              {unsyncedIssues.map((issue) => (
+                <label
+                  key={issue.id}
+                  htmlFor={`jira-issue-${issue.id}`}
+                  className="flex items-start gap-3 p-3 hover:bg-muted/50 cursor-pointer"
+                >
+                  <Checkbox
+                    id={`jira-issue-${issue.id}`}
+                    checked={selectedJiraIds.has(issue.id)}
+                    onCheckedChange={(c) => toggleIssueSelection(issue.id, Boolean(c))}
+                    className="mt-0.5"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs text-muted-foreground">{issue.issue_number}</span>
+                      <span className="text-xs uppercase px-1.5 py-0.5 rounded bg-muted">{issue.priority}</span>
+                      <span className="text-xs uppercase px-1.5 py-0.5 rounded bg-muted">{issue.status}</span>
+                    </div>
+                    <div className="text-sm font-medium truncate">{issue.title}</div>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="flex gap-2">
           <Button onClick={generatePDF} disabled={isGenerating || filteredIssues.length === 0} className="flex-1">
             {isGenerating ? (
@@ -545,7 +587,7 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
           </Button>
           <Button 
             onClick={submitToJira} 
-            disabled={isSubmittingToJira || unsyncedIssues.length === 0} 
+            disabled={isSubmittingToJira || selectedUnsyncedIssues.length === 0} 
             variant="secondary"
             className="flex-1"
           >
@@ -554,7 +596,7 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
             ) : (
               <Send className="mr-2 h-4 w-4" />
             )}
-            Submit to Jira ({unsyncedIssues.length})
+            Submit to Jira ({selectedUnsyncedIssues.length})
           </Button>
         </div>
       </CardContent>
