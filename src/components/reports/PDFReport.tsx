@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface PDFReportProps {
   issues: Issue[];
@@ -40,6 +41,7 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
   const [softwareVersionFilter, setSoftwareVersionFilter] = useState<string>('all');
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [selectedJiraIds, setSelectedJiraIds] = useState<Set<string>>(new Set());
 
   const filteredIssues = issues.filter((issue) => {
     const matchesStatus = statusFilter === 'all' || issue.status === statusFilter;
@@ -62,6 +64,27 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
   // Issues that haven't been synced to Jira yet
   const unsyncedIssues = filteredIssues.filter((issue) => !issue.jira_issue_key);
   const alreadySyncedCount = filteredIssues.length - unsyncedIssues.length;
+
+  // Default selection: all unsynced issues whenever the set changes
+  const unsyncedIdsKey = unsyncedIssues.map((i) => i.id).join(',');
+  useEffect(() => {
+    setSelectedJiraIds(new Set(unsyncedIssues.map((i) => i.id)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unsyncedIdsKey]);
+
+  const toggleIssueSelection = (id: string, checked: boolean) => {
+    setSelectedJiraIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id); else next.delete(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = (checked: boolean) => {
+    setSelectedJiraIds(checked ? new Set(unsyncedIssues.map((i) => i.id)) : new Set());
+  };
+
+  const selectedUnsyncedIssues = unsyncedIssues.filter((i) => selectedJiraIds.has(i.id));
 
   const generatePDF = async () => {
     setIsGenerating(true);
@@ -311,12 +334,20 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
       });
       return;
     }
+    if (selectedUnsyncedIssues.length === 0) {
+      toast({
+        title: 'No issues selected',
+        description: 'Please select at least one issue to submit to Jira.',
+        variant: 'destructive',
+      });
+      return;
+    }
     
     setIsSubmittingToJira(true);
     try {
       const versionMap: Record<string, string> = {};
       versions.forEach((v) => { versionMap[v.id] = v.version; });
-      const enrichedIssues = unsyncedIssues.map((i) => ({
+      const enrichedIssues = selectedUnsyncedIssues.map((i) => ({
         ...i,
         software_version: i.software_version_id ? versionMap[i.software_version_id] || null : null,
         gui_version: i.gui_version_id ? versionMap[i.gui_version_id] || null : null,
@@ -503,6 +534,48 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
           </p>
         </div>
 
+        {unsyncedIssues.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>Select issues to submit to Jira</Label>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="select-all-jira"
+                  checked={selectedJiraIds.size === unsyncedIssues.length && unsyncedIssues.length > 0}
+                  onCheckedChange={(c) => toggleSelectAll(Boolean(c))}
+                />
+                <label htmlFor="select-all-jira" className="text-xs text-muted-foreground cursor-pointer">
+                  Select all ({selectedJiraIds.size}/{unsyncedIssues.length})
+                </label>
+              </div>
+            </div>
+            <div className="max-h-64 overflow-y-auto rounded-md border divide-y">
+              {unsyncedIssues.map((issue) => (
+                <label
+                  key={issue.id}
+                  htmlFor={`jira-issue-${issue.id}`}
+                  className="flex items-start gap-3 p-3 hover:bg-muted/50 cursor-pointer"
+                >
+                  <Checkbox
+                    id={`jira-issue-${issue.id}`}
+                    checked={selectedJiraIds.has(issue.id)}
+                    onCheckedChange={(c) => toggleIssueSelection(issue.id, Boolean(c))}
+                    className="mt-0.5"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs text-muted-foreground">{issue.issue_number}</span>
+                      <span className="text-xs uppercase px-1.5 py-0.5 rounded bg-muted">{issue.priority}</span>
+                      <span className="text-xs uppercase px-1.5 py-0.5 rounded bg-muted">{issue.status}</span>
+                    </div>
+                    <div className="text-sm font-medium truncate">{issue.title}</div>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="flex gap-2">
           <Button onClick={generatePDF} disabled={isGenerating || filteredIssues.length === 0} className="flex-1">
             {isGenerating ? (
@@ -514,7 +587,7 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
           </Button>
           <Button 
             onClick={submitToJira} 
-            disabled={isSubmittingToJira || unsyncedIssues.length === 0} 
+            disabled={isSubmittingToJira || selectedUnsyncedIssues.length === 0} 
             variant="secondary"
             className="flex-1"
           >
@@ -523,7 +596,7 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
             ) : (
               <Send className="mr-2 h-4 w-4" />
             )}
-            Submit to Jira ({unsyncedIssues.length})
+            Submit to Jira ({selectedUnsyncedIssues.length})
           </Button>
         </div>
       </CardContent>
