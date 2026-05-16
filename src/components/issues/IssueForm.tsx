@@ -22,6 +22,7 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
   const { createIssue, isCreating } = useIssues();
   const uploadAttachment = useUploadAttachment();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
