@@ -12,6 +12,10 @@ interface CreateIssueData {
   software_version_id?: string | null;
   gui_version_id?: string | null;
   ai_version_id?: string | null;
+  drive_firmware_version_id?: string | null;
+  safety_logic_version_id?: string | null;
+  safety_firmware_version_id?: string | null;
+  other_equipment?: string | null;
   steps_to_reproduce?: string;
   expected_behavior?: string;
   actual_behavior?: string;
