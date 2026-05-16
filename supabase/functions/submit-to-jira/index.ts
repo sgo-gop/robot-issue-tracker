@@ -353,10 +353,10 @@ serve(async (req) => {
           baseFields[SAIR_FIELDS.reproSteps] = toAdf(issue.steps_to_reproduce);
         }
         if (issue.expected_behavior) {
-          baseFields[SAIR_FIELDS.expectedResults] = toAdf(issue.expected_behavior);
+          baseFields[SAIR_FIELDS.expectedResults] = issue.expected_behavior;
         }
         if (issue.actual_behavior) {
-          baseFields[SAIR_FIELDS.actualResults] = toAdf(issue.actual_behavior);
+          baseFields[SAIR_FIELDS.actualResults] = issue.actual_behavior;
         }
       }
 
