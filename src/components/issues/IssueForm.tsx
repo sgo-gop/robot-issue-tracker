@@ -1,7 +1,6 @@
 import { useState, useRef } from 'react';
 import { useSession } from '@/hooks/useSession';
 import { useIssues, useUploadAttachment } from '@/hooks/useIssues';
-import { useSoftwareVersions } from '@/hooks/useSoftwareVersions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { IssuePriority, IssueCategory, RobotType, ROBOT_TYPES } from '@/types/database';
 import { Camera, Loader2, X, Upload } from 'lucide-react';
 import { VoiceAssistant } from './VoiceAssistant';
+import { VersionCombobox } from './VersionCombobox';
 
 interface IssueFormProps {
   onSuccess?: () => void;
@@ -19,7 +19,6 @@ interface IssueFormProps {
 export const IssueForm = ({ onSuccess }: IssueFormProps) => {
   const { user } = useSession();
   const { createIssue, isCreating } = useIssues();
-  const { versions } = useSoftwareVersions();
   const uploadAttachment = useUploadAttachment();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -29,6 +28,8 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
   const [category, setCategory] = useState<IssueCategory>('other');
   const [robotType, setRobotType] = useState<string>(user?.robotType || '');
   const [softwareVersionId, setSoftwareVersionId] = useState<string>('');
+  const [guiVersionId, setGuiVersionId] = useState<string>('');
+  const [aiVersionId, setAiVersionId] = useState<string>('');
   const [stepsToReproduce, setStepsToReproduce] = useState('');
   const [expectedBehavior, setExpectedBehavior] = useState('');
   const [actualBehavior, setActualBehavior] = useState('');
@@ -55,6 +56,8 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
       category,
       robot_type: (robotType || null) as RobotType | null,
       software_version_id: softwareVersionId || null,
+      gui_version_id: guiVersionId || null,
+      ai_version_id: aiVersionId || null,
       steps_to_reproduce: stepsToReproduce.trim() || undefined,
       expected_behavior: expectedBehavior.trim() || undefined,
       actual_behavior: actualBehavior.trim() || undefined,
@@ -73,6 +76,8 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
     setCategory('other');
     setRobotType(user?.robotType || '');
     setSoftwareVersionId('');
+    setGuiVersionId('');
+    setAiVersionId('');
     setStepsToReproduce('');
     setExpectedBehavior('');
     setActualBehavior('');
@@ -144,22 +149,6 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="software-version">Software Version</Label>
-              <Select value={softwareVersionId} onValueChange={setSoftwareVersionId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select version" />
-                </SelectTrigger>
-                <SelectContent>
-                  {versions.map((v) => (
-                    <SelectItem key={v.id} value={v.id}>
-                      {v.version}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="priority">Priority</Label>
               <Select value={priority} onValueChange={(v) => setPriority(v as IssuePriority)}>
                 <SelectTrigger>
@@ -188,6 +177,21 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="space-y-2">
+              <Label>Software Version</Label>
+              <VersionCombobox versionType="software" value={softwareVersionId} onChange={setSoftwareVersionId} placeholder="Select or type Software version" />
+            </div>
+            <div className="space-y-2">
+              <Label>GUI Version</Label>
+              <VersionCombobox versionType="gui" value={guiVersionId} onChange={setGuiVersionId} placeholder="Select or type GUI version" />
+            </div>
+            <div className="space-y-2">
+              <Label>AI Version</Label>
+              <VersionCombobox versionType="ai" value={aiVersionId} onChange={setAiVersionId} placeholder="Select or type AI version" />
             </div>
           </div>
 
