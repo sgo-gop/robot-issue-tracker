@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { IssuePriority, IssueCategory, RobotType, ROBOT_TYPES } from '@/types/database';
+import { IssuePriority, IssueCategory, RobotType, ROBOT_TYPES, OTHER_EQUIPMENT } from '@/types/database';
 import { Camera, Loader2, X, Upload } from 'lucide-react';
 import { VoiceAssistant } from './VoiceAssistant';
 import { VersionCombobox } from './VersionCombobox';
@@ -30,6 +30,10 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
   const [softwareVersionId, setSoftwareVersionId] = useState<string>('');
   const [guiVersionId, setGuiVersionId] = useState<string>('');
   const [aiVersionId, setAiVersionId] = useState<string>('');
+  const [driveFirmwareVersionId, setDriveFirmwareVersionId] = useState<string>('');
+  const [safetyLogicVersionId, setSafetyLogicVersionId] = useState<string>('');
+  const [safetyFirmwareVersionId, setSafetyFirmwareVersionId] = useState<string>('');
+  const [otherEquipment, setOtherEquipment] = useState<string>('');
   const [stepsToReproduce, setStepsToReproduce] = useState('');
   const [expectedBehavior, setExpectedBehavior] = useState('');
   const [actualBehavior, setActualBehavior] = useState('');
@@ -58,6 +62,10 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
       software_version_id: softwareVersionId || null,
       gui_version_id: guiVersionId || null,
       ai_version_id: aiVersionId || null,
+      drive_firmware_version_id: driveFirmwareVersionId || null,
+      safety_logic_version_id: safetyLogicVersionId || null,
+      safety_firmware_version_id: safetyFirmwareVersionId || null,
+      other_equipment: otherEquipment || null,
       steps_to_reproduce: stepsToReproduce.trim() || undefined,
       expected_behavior: expectedBehavior.trim() || undefined,
       actual_behavior: actualBehavior.trim() || undefined,
@@ -78,6 +86,10 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
     setSoftwareVersionId('');
     setGuiVersionId('');
     setAiVersionId('');
+    setDriveFirmwareVersionId('');
+    setSafetyLogicVersionId('');
+    setSafetyFirmwareVersionId('');
+    setOtherEquipment('');
     setStepsToReproduce('');
     setExpectedBehavior('');
     setActualBehavior('');
@@ -149,6 +161,22 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="other-equipment">Others</Label>
+              <Select value={otherEquipment} onValueChange={setOtherEquipment}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select other equipment" />
+                </SelectTrigger>
+                <SelectContent>
+                  {OTHER_EQUIPMENT.map((oe) => (
+                    <SelectItem key={oe} value={oe}>
+                      {oe}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="priority">Priority</Label>
               <Select value={priority} onValueChange={(v) => setPriority(v as IssuePriority)}>
                 <SelectTrigger>
@@ -192,6 +220,21 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
             <div className="space-y-2">
               <Label>AI Version</Label>
               <VersionCombobox versionType="ai" value={aiVersionId} onChange={setAiVersionId} placeholder="Select or type AI version" />
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="space-y-2">
+              <Label>Drive Firmware</Label>
+              <VersionCombobox versionType="drive_firmware" value={driveFirmwareVersionId} onChange={setDriveFirmwareVersionId} placeholder="Select or type Drive Firmware" />
+            </div>
+            <div className="space-y-2">
+              <Label>Safety-Logic</Label>
+              <VersionCombobox versionType="safety_logic" value={safetyLogicVersionId} onChange={setSafetyLogicVersionId} placeholder="Select or type Safety-Logic" />
+            </div>
+            <div className="space-y-2">
+              <Label>Safety-Firmware</Label>
+              <VersionCombobox versionType="safety_firmware" value={safetyFirmwareVersionId} onChange={setSafetyFirmwareVersionId} placeholder="Select or type Safety-Firmware" />
             </div>
           </div>
 
