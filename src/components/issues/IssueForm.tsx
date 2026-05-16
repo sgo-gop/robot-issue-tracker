@@ -11,6 +11,7 @@ import { IssuePriority, IssueCategory, RobotType, ROBOT_TYPES, OTHER_EQUIPMENT }
 import { Camera, Loader2, X, Upload } from 'lucide-react';
 import { VersionCombobox } from './VersionCombobox';
 import { FieldVoiceInput } from './FieldVoiceInput';
+import { useToast } from '@/hooks/use-toast';
 
 interface IssueFormProps {
   onSuccess?: () => void;
@@ -21,6 +22,7 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
   const { createIssue, isCreating } = useIssues();
   const uploadAttachment = useUploadAttachment();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -53,9 +55,22 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
     e.preventDefault();
     if (!user) return;
 
+    const trimmedTitle = title.trim();
+    const trimmedDescription = description.trim();
+
+    if (!trimmedTitle) {
+      toast({ title: 'Missing required field', description: 'Please enter an issue title.', variant: 'destructive' });
+      return;
+    }
+
+    if (!trimmedDescription) {
+      toast({ title: 'Missing required field', description: 'Please enter a description.', variant: 'destructive' });
+      return;
+    }
+
     const issue = await createIssue({
-      title: title.trim(),
-      description: description.trim(),
+      title: trimmedTitle,
+      description: trimmedDescription,
       priority,
       category,
       robot_type: (robotType || null) as RobotType | null,
