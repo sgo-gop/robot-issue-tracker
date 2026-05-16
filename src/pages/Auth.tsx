@@ -15,24 +15,33 @@ const Auth = () => {
   const { setSession } = useSession();
   const { toast } = useToast();
   
-  const [name, setName] = useState('');
+  const [emailPrefix, setEmailPrefix] = useState('');
   const [robotType, setRobotType] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const EMAIL_DOMAIN = '@neura-robotics.com';
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const trimmedName = name.trim();
-    if (!trimmedName) {
-      toast({ title: 'Please enter your name', variant: 'destructive' });
+
+    const trimmedPrefix = emailPrefix.trim().toLowerCase().replace(/@.*$/, '');
+    if (!trimmedPrefix) {
+      toast({ title: 'Please enter your email', variant: 'destructive' });
       return;
     }
-    
-    if (trimmedName.length > 100) {
-      toast({ title: 'Name must be less than 100 characters', variant: 'destructive' });
+
+    if (!/^[a-z0-9._-]+$/.test(trimmedPrefix)) {
+      toast({ title: 'Invalid email format', description: 'Use letters, numbers, dots, hyphens or underscores only.', variant: 'destructive' });
       return;
     }
-    
+
+    const fullEmail = `${trimmedPrefix}${EMAIL_DOMAIN}`;
+
+    if (fullEmail.length > 100) {
+      toast({ title: 'Email must be less than 100 characters', variant: 'destructive' });
+      return;
+    }
+
     if (!robotType) {
       toast({ title: 'Please select your robot type', variant: 'destructive' });
       return;
@@ -40,8 +49,8 @@ const Auth = () => {
 
     setIsSubmitting(true);
 
-    setSession(trimmedName, robotType);
-    toast({ title: `Welcome, ${trimmedName}!` });
+    setSession(fullEmail, robotType);
+    toast({ title: `Welcome, ${fullEmail}!` });
     navigate('/');
 
     setIsSubmitting(false);
@@ -55,21 +64,27 @@ const Auth = () => {
             <Bot className="h-8 w-8" />
           </div>
           <CardTitle className="text-2xl">Robot Testing Tracker</CardTitle>
-          <CardDescription>Enter your name and select your robot type to begin</CardDescription>
+          <CardDescription>Enter your email and select your robot type to begin</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Your Name</Label>
-              <Input
-                id="name"
-                placeholder="Enter your name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                maxLength={100}
-                required
-                autoFocus
-              />
+              <Label htmlFor="email">Your Email</Label>
+              <div className="flex items-stretch rounded-md border border-input bg-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background overflow-hidden">
+                <Input
+                  id="email"
+                  placeholder="firstname.lastname"
+                  value={emailPrefix}
+                  onChange={(e) => setEmailPrefix(e.target.value)}
+                  maxLength={80}
+                  required
+                  autoFocus
+                  className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 rounded-none"
+                />
+                <span className="flex items-center px-3 text-sm text-muted-foreground bg-muted border-l border-input whitespace-nowrap">
+                  {EMAIL_DOMAIN}
+                </span>
+              </div>
             </div>
 
             <div className="space-y-2">
