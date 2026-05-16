@@ -40,6 +40,7 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
   const [expectedBehavior, setExpectedBehavior] = useState('');
   const [actualBehavior, setActualBehavior] = useState('');
   const [files, setFiles] = useState<File[]>([]);
+  const [errors, setErrors] = useState<Record<string, boolean>>({});
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
