@@ -26,7 +26,8 @@ interface PDFReportProps {
 
 export const PDFReport = ({ issues }: PDFReportProps) => {
   const { versions } = useSoftwareVersions();
-  const { user } = useAuth();
+  const { user: authUser } = useAuth();
+  const { user: sessionUser } = useSession();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isGenerating, setIsGenerating] = useState(false);
@@ -55,8 +56,8 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
     ? versions.find(v => v.id === softwareVersionFilter)?.version 
     : null;
 
-  // Get the user's name from metadata or email
-  const reporterName = user?.user_metadata?.full_name || user?.email || 'Unknown User';
+  // Get the current user's name from auth or session
+  const reporterName = authUser?.user_metadata?.full_name || authUser?.email || sessionUser?.name || 'Unknown User';
 
   // Issues that haven't been synced to Jira yet
   const unsyncedIssues = filteredIssues.filter((issue) => !issue.jira_issue_key);
