@@ -279,16 +279,17 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="expected">Expected Behavior</Label>
+                <Label htmlFor="expected" className={errors.expected ? 'text-destructive' : ''}>Expected Behavior *</Label>
                 <FieldVoiceInput field="expected_behavior" value={expectedBehavior} onChange={setExpectedBehavior} />
               </div>
               <Textarea
                 id="expected"
                 placeholder="What should happen?"
                 value={expectedBehavior}
-                onChange={(e) => setExpectedBehavior(e.target.value)}
+                onChange={(e) => { setExpectedBehavior(e.target.value); if (errors.expected) setErrors((prev) => ({ ...prev, expected: false })); }}
                 rows={2}
                 maxLength={1000}
+                className={errors.expected ? 'border-destructive focus-visible:ring-destructive' : ''}
               />
             </div>
 
