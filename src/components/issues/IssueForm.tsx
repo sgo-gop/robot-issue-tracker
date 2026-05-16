@@ -58,16 +58,25 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
 
     const trimmedTitle = title.trim();
     const trimmedDescription = description.trim();
+    const trimmedSteps = stepsToReproduce.trim();
+    const trimmedExpected = expectedBehavior.trim();
+    const trimmedActual = actualBehavior.trim();
 
-    if (!trimmedTitle) {
-      toast({ title: 'Missing required field', description: 'Please enter an issue title.', variant: 'destructive' });
+    const newErrors: Record<string, boolean> = {};
+
+    if (!trimmedTitle) newErrors.title = true;
+    if (!trimmedDescription) newErrors.description = true;
+    if (!trimmedSteps) newErrors.steps = true;
+    if (!trimmedExpected) newErrors.expected = true;
+    if (!trimmedActual) newErrors.actual = true;
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      toast({ title: 'Missing required fields', description: 'Please fill in all highlighted fields before submitting.', variant: 'destructive' });
       return;
     }
 
-    if (!trimmedDescription) {
-      toast({ title: 'Missing required field', description: 'Please enter a description.', variant: 'destructive' });
-      return;
-    }
+    setErrors({});
 
     const issue = await createIssue({
       title: trimmedTitle,
