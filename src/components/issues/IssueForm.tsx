@@ -295,16 +295,17 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="actual">Actual Behavior</Label>
+                <Label htmlFor="actual" className={errors.actual ? 'text-destructive' : ''}>Actual Behavior *</Label>
                 <FieldVoiceInput field="actual_behavior" value={actualBehavior} onChange={setActualBehavior} />
               </div>
               <Textarea
                 id="actual"
                 placeholder="What actually happened?"
                 value={actualBehavior}
-                onChange={(e) => setActualBehavior(e.target.value)}
+                onChange={(e) => { setActualBehavior(e.target.value); if (errors.actual) setErrors((prev) => ({ ...prev, actual: false })); }}
                 rows={2}
                 maxLength={1000}
+                className={errors.actual ? 'border-destructive focus-visible:ring-destructive' : ''}
               />
             </div>
           </div>
