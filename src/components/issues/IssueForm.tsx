@@ -11,6 +11,7 @@ import { IssuePriority, IssueCategory, RobotType, ROBOT_TYPES, OTHER_EQUIPMENT }
 import { Camera, Loader2, X, Upload } from 'lucide-react';
 import { VersionCombobox } from './VersionCombobox';
 import { FieldVoiceInput } from './FieldVoiceInput';
+import { useToast } from '@/hooks/use-toast';
 
 interface IssueFormProps {
   onSuccess?: () => void;
