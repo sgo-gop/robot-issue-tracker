@@ -108,7 +108,7 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
               Reporting as <span className="font-medium">{user?.name}</span> on <span className="font-medium">{user?.robotType}</span>
             </CardDescription>
           </div>
-          <VoiceAssistant onParsed={handleVoiceParsed} />
+          </div>
         </div>
       </CardHeader>
       <CardContent>
