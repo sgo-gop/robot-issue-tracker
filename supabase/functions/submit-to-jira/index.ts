@@ -19,6 +19,13 @@ interface Issue {
   actual_behavior?: string;
   robot_type?: string | null;
   software_versions?: { version: string } | null;
+  software_version?: string | null;
+  gui_version?: string | null;
+  ai_version?: string | null;
+  drive_firmware_version?: string | null;
+  safety_logic_version?: string | null;
+  safety_firmware_version?: string | null;
+  other_equipment?: string | null;
   created_at: string;
   jira_issue_key?: string | null;
 }
