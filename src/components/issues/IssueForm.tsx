@@ -237,7 +237,7 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="description">Description *</Label>
-              <FieldVoiceInput value={description} onChange={setDescription} />
+              <FieldVoiceInput field="description" value={description} onChange={setDescription} />
             </div>
             <Textarea
               id="description"
@@ -253,7 +253,7 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="steps">Steps to Reproduce</Label>
-              <FieldVoiceInput value={stepsToReproduce} onChange={setStepsToReproduce} />
+              <FieldVoiceInput field="steps_to_reproduce" value={stepsToReproduce} onChange={setStepsToReproduce} />
             </div>
             <Textarea
               id="steps"
@@ -269,7 +269,7 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="expected">Expected Behavior</Label>
-                <FieldVoiceInput value={expectedBehavior} onChange={setExpectedBehavior} />
+                <FieldVoiceInput field="expected_behavior" value={expectedBehavior} onChange={setExpectedBehavior} />
               </div>
               <Textarea
                 id="expected"
@@ -284,7 +284,7 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="actual">Actual Behavior</Label>
-                <FieldVoiceInput value={actualBehavior} onChange={setActualBehavior} />
+                <FieldVoiceInput field="actual_behavior" value={actualBehavior} onChange={setActualBehavior} />
               </div>
               <Textarea
                 id="actual"
