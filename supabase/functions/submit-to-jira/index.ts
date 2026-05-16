@@ -126,6 +126,19 @@ serve(async (req) => {
       return diagnostic;
     };
 
+    // Sanitize a name into a Jira-safe label
+    const toJiraLabel = (name: string | null | undefined): string | null => {
+      if (!name || !name.trim()) return null;
+      return name
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .slice(0, 100);
+    };
+
+    const reporterLabel = toJiraLabel(reporterName);
+
     // Safe credential metadata logging (never log full token).
     console.log('Jira config:', {
       domain: jiraDomain,
