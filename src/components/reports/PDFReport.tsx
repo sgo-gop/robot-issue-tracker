@@ -80,6 +80,11 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
       attachmentsByIssue[att.issue_id].push(att as IssueAttachment);
     });
 
+    // Lookup map for version ids -> version string
+    const versionMap: Record<string, string> = {};
+    versions.forEach((v) => { versionMap[v.id] = v.version; });
+    const versionOf = (id?: string | null) => (id ? versionMap[id] || '-' : '-');
+
     // Get public URLs for all attachments
     const getPublicUrl = (filePath: string) => {
       const { data } = supabase.storage.from('issue-attachments').getPublicUrl(filePath);
@@ -191,12 +196,43 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
                 <div class="issue-field-value">${issue.robot_type || 'Not assigned'}</div>
               </div>
               <div class="issue-field">
+                <div class="issue-field-label">Other Equipment</div>
+                <div class="issue-field-value">${escapeHtml(issue.other_equipment)}</div>
+              </div>
+              <div class="issue-field">
                 <div class="issue-field-label">Created</div>
                 <div class="issue-field-value">${format(new Date(issue.created_at), 'MMM d, yyyy h:mm a')}</div>
               </div>
               <div class="issue-field">
                 <div class="issue-field-label">${issue.status === 'closed' ? 'Closed' : 'Last Updated'}</div>
                 <div class="issue-field-value">${issue.closed_at ? format(new Date(issue.closed_at), 'MMM d, yyyy h:mm a') : format(new Date(issue.updated_at), 'MMM d, yyyy h:mm a')}</div>
+              </div>
+            </div>
+
+            <div class="issue-grid">
+              <div class="issue-field">
+                <div class="issue-field-label">Software Version</div>
+                <div class="issue-field-value">${versionOf(issue.software_version_id)}</div>
+              </div>
+              <div class="issue-field">
+                <div class="issue-field-label">GUI Version</div>
+                <div class="issue-field-value">${versionOf(issue.gui_version_id)}</div>
+              </div>
+              <div class="issue-field">
+                <div class="issue-field-label">AI Version</div>
+                <div class="issue-field-value">${versionOf(issue.ai_version_id)}</div>
+              </div>
+              <div class="issue-field">
+                <div class="issue-field-label">Drive Firmware</div>
+                <div class="issue-field-value">${versionOf(issue.drive_firmware_version_id)}</div>
+              </div>
+              <div class="issue-field">
+                <div class="issue-field-label">Safety-Logic</div>
+                <div class="issue-field-value">${versionOf(issue.safety_logic_version_id)}</div>
+              </div>
+              <div class="issue-field">
+                <div class="issue-field-label">Safety-Firmware</div>
+                <div class="issue-field-value">${versionOf(issue.safety_firmware_version_id)}</div>
               </div>
             </div>
 
