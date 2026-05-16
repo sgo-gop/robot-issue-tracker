@@ -22,9 +22,10 @@ export const VersionCombobox = ({ versionType, value, onChange, placeholder }: P
   const selected = versions.find((v) => v.id === value);
   const trimmed = search.trim();
   const exists = !!versions.find((v) => v.version.toLowerCase() === trimmed.toLowerCase());
+  const isValidFormat = /^\d+\.\d+\.\d+$/.test(trimmed);
 
   const handleAdd = async () => {
-    if (!trimmed) return;
+    if (!trimmed || !isValidFormat) return;
     const v = await addVersion({ version: trimmed, version_type: versionType });
     onChange(v.id);
     setSearch('');
@@ -41,13 +42,17 @@ export const VersionCombobox = ({ versionType, value, onChange, placeholder }: P
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
         <Command shouldFilter>
-          <CommandInput placeholder="Type a version…" value={search} onValueChange={setSearch} />
+          <CommandInput placeholder="Type a version e.g. 1.2.3" value={search} onValueChange={setSearch} />
           <CommandList>
             <CommandEmpty>
               {trimmed ? (
-                <Button type="button" size="sm" variant="ghost" disabled={isAdding} onClick={handleAdd} className="w-full">
-                  <Plus className="mr-2 h-4 w-4" /> Add "{trimmed}"
-                </Button>
+                isValidFormat ? (
+                  <Button type="button" size="sm" variant="ghost" disabled={isAdding} onClick={handleAdd} className="w-full">
+                    <Plus className="mr-2 h-4 w-4" /> Add "{trimmed}"
+                  </Button>
+                ) : (
+                  <span className="text-xs text-muted-foreground">Use format xx.xx.xx (e.g. 1.2.3)</span>
+                )
               ) : (
                 'No versions yet.'
               )}
@@ -66,7 +71,7 @@ export const VersionCombobox = ({ versionType, value, onChange, placeholder }: P
                   {v.version}
                 </CommandItem>
               ))}
-              {trimmed && !exists && (
+              {trimmed && !exists && isValidFormat && (
                 <CommandItem onSelect={handleAdd} disabled={isAdding}>
                   <Plus className="mr-2 h-4 w-4" /> Add "{trimmed}"
                 </CommandItem>
