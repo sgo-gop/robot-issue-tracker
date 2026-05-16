@@ -312,8 +312,19 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
     
     setIsSubmittingToJira(true);
     try {
+      const versionMap: Record<string, string> = {};
+      versions.forEach((v) => { versionMap[v.id] = v.version; });
+      const enrichedIssues = unsyncedIssues.map((i) => ({
+        ...i,
+        software_version: i.software_version_id ? versionMap[i.software_version_id] || null : null,
+        gui_version: i.gui_version_id ? versionMap[i.gui_version_id] || null : null,
+        ai_version: i.ai_version_id ? versionMap[i.ai_version_id] || null : null,
+        drive_firmware_version: i.drive_firmware_version_id ? versionMap[i.drive_firmware_version_id] || null : null,
+        safety_logic_version: i.safety_logic_version_id ? versionMap[i.safety_logic_version_id] || null : null,
+        safety_firmware_version: i.safety_firmware_version_id ? versionMap[i.safety_firmware_version_id] || null : null,
+      }));
       const { data, error } = await supabase.functions.invoke('submit-to-jira', {
-        body: { issues: unsyncedIssues, projectKey: jiraProjectKey }
+        body: { issues: enrichedIssues, projectKey: jiraProjectKey }
       });
 
       if (error) {
