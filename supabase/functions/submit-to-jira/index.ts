@@ -365,7 +365,7 @@ serve(async (req) => {
         priority: isSair
           ? { id: jiraPriorityId(issue.priority) }
           : { name: jiraPriorityName(issue.priority) },
-        labels: ['RobotTestingTracker', ...(isSair ? [] : [issue.category, 'lovable-import'])],
+        labels: ['RobotTestingTracker', ...(reporterLabel ? [reporterLabel] : []), ...(isSair ? [] : [issue.category, 'lovable-import'])],
         ...(teamId ? { [teamFieldKey]: teamId } : {}),
       };
 
