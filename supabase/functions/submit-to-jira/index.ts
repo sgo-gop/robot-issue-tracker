@@ -126,14 +126,17 @@ serve(async (req) => {
       return diagnostic;
     };
 
-    // Sanitize a name into a Jira-safe label
+    // Sanitize a name or email into a Jira-safe label.
+    // Jira labels cannot contain spaces. Dots, underscores and hyphens are allowed.
     const toJiraLabel = (name: string | null | undefined): string | null => {
       if (!name || !name.trim()) return null;
       return name
         .trim()
         .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-')
+        .replace(/@/g, '_at_')
+        .replace(/[^a-z0-9._-]+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '')
         .slice(0, 100);
     };
 
