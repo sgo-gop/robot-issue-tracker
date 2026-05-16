@@ -98,24 +98,6 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
     onSuccess?.();
   };
 
-  const handleVoiceParsed = (data: {
-    title: string;
-    description: string;
-    priority: IssuePriority;
-    category: IssueCategory;
-    steps_to_reproduce: string;
-    expected_behavior: string;
-    actual_behavior: string;
-  }) => {
-    if (data.title) setTitle(data.title);
-    if (data.description) setDescription(data.description);
-    if (data.priority) setPriority(data.priority);
-    if (data.category) setCategory(data.category);
-    if (data.steps_to_reproduce) setStepsToReproduce(data.steps_to_reproduce);
-    if (data.expected_behavior) setExpectedBehavior(data.expected_behavior);
-    if (data.actual_behavior) setActualBehavior(data.actual_behavior);
-  };
-
   return (
     <Card>
       <CardHeader>
