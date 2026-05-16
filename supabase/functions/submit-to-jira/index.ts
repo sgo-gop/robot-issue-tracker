@@ -19,6 +19,13 @@ interface Issue {
   actual_behavior?: string;
   robot_type?: string | null;
   software_versions?: { version: string } | null;
+  software_version?: string | null;
+  gui_version?: string | null;
+  ai_version?: string | null;
+  drive_firmware_version?: string | null;
+  safety_logic_version?: string | null;
+  safety_firmware_version?: string | null;
+  other_equipment?: string | null;
   created_at: string;
   jira_issue_key?: string | null;
 }
@@ -287,13 +294,26 @@ serve(async (req) => {
         continue;
       }
 
+      const softwareVersion = issue.software_version || issue.software_versions?.version || null;
+      const guiVersion = issue.gui_version || null;
+      const aiVersion = issue.ai_version || null;
+      const driveFirmware = issue.drive_firmware_version || null;
+      const safetyLogic = issue.safety_logic_version || null;
+      const safetyFirmware = issue.safety_firmware_version || null;
+
       // Build description with all relevant info
       const descriptionParts = [
         `*Issue ID:* ${issue.issue_number}`,
         `*Category:* ${issue.category}`,
         `*Status:* ${issue.status}`,
         issue.robot_type ? `*Robot:* ${issue.robot_type}` : null,
-        issue.software_versions?.version ? `*Software Version:* ${issue.software_versions.version}` : null,
+        issue.other_equipment ? `*Other Equipment:* ${issue.other_equipment}` : null,
+        softwareVersion ? `*Software Version:* ${softwareVersion}` : null,
+        guiVersion ? `*GUI Version:* ${guiVersion}` : null,
+        aiVersion ? `*AI Version:* ${aiVersion}` : null,
+        driveFirmware ? `*Drive Firmware:* ${driveFirmware}` : null,
+        safetyLogic ? `*Safety-Logic:* ${safetyLogic}` : null,
+        safetyFirmware ? `*Safety-Firmware:* ${safetyFirmware}` : null,
         `*Created:* ${new Date(issue.created_at).toLocaleString()}`,
         '',
         '*Description:*',
@@ -339,12 +359,9 @@ serve(async (req) => {
       if (isSair) {
         const productId = sairProductOptionForRobot(issue.robot_type);
         if (productId) baseFields[SAIR_FIELDS.product] = { id: productId };
-        // Jira requires Control Software Version. We only track one version in
-        // the app, so use it for control/gui/ai. Fallback to "N/A" if missing.
-        const versionValue = issue.software_versions?.version || 'N/A';
-        baseFields[SAIR_FIELDS.controlSoftwareVersion] = versionValue;
-        baseFields[SAIR_FIELDS.guiVersion] = versionValue;
-        baseFields[SAIR_FIELDS.aiVersion] = versionValue;
+        baseFields[SAIR_FIELDS.controlSoftwareVersion] = softwareVersion || 'N/A';
+        baseFields[SAIR_FIELDS.guiVersion] = guiVersion || 'N/A';
+        baseFields[SAIR_FIELDS.aiVersion] = aiVersion || 'N/A';
         const toAdf = (text: string) => ({
           type: 'doc',
           version: 1,
