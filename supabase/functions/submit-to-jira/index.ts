@@ -44,10 +44,10 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const jiraDomain = 'neurarobotics.atlassian.net';
-    const ALLOWED_PROJECT_KEYS = ['SUBR', 'NEURA'];
+    const ALLOWED_PROJECT_KEYS = ['SAIR', 'NEURA'];
     const projectKey = (typeof requestedProjectKey === 'string' && ALLOWED_PROJECT_KEYS.includes(requestedProjectKey.toUpperCase()))
       ? requestedProjectKey.toUpperCase()
-      : 'SUBR';
+      : 'SAIR';
 
     if (!jiraEmail || !jiraApiToken) {
       console.error('Missing Jira credentials');
@@ -133,22 +133,27 @@ serve(async (req) => {
     // on some read endpoints while still being usable for the issue-create endpoint.
     // Let the actual create request determine whether auth, permissions, or fields fail.
 
-    // SUBR uses issuetype id 10009 (Bug, per SUBR spec); NEURA stays as Task.
-    const isSubr = projectKey === 'SUBR';
+    // SAIR uses issuetype id 10009 (Bug, per SAIR spec); NEURA stays as Task.
+    const isSair = projectKey === 'SAIR';
     const issueTypeName = 'Task'; // used for NEURA + error messages
-    const subrIssueTypeId = '10009';
+    const sairIssueTypeId = '10009';
 
-    // SUBR custom field IDs (from SUBR spec)
-    const SUBR_FIELDS = {
+    // SAIR custom field IDs (from SAIR spec)
+    const SAIR_FIELDS = {
       product: 'customfield_10161',
+      controlSoftwareVersion: 'customfield_10506',
+      guiVersion: 'customfield_10507',
       aiVersion: 'customfield_10508',
+      reproSteps: 'customfield_10509',
+      expectedResults: 'customfield_10704',
+      actualResults: 'customfield_10705',
       driveFirmware: 'customfield_12816',
       safetyLogic: 'customfield_12817',
       safetyFirmware: 'customfield_12818',
     } as const;
 
-    // Map robot_type → SUBR Product option id
-    const subrProductOptionForRobot = (robot?: string | null): string | null => {
+    // Map robot_type → SAIR Product option id
+    const sairProductOptionForRobot = (robot?: string | null): string | null => {
       if (!robot) return null;
       const r = robot.toUpperCase();
       if (r.includes('LARA')) return '10444';        // LARA Classic
@@ -160,7 +165,7 @@ serve(async (req) => {
       return '10447';                                 // Other
     };
 
-    // Map our priority → Jira priority id (SUBR) / name (NEURA)
+    // Map our priority → Jira priority id (SAIR) / name (NEURA)
     const jiraPriorityId = (p?: string | null): string => {
       switch ((p || '').toLowerCase()) {
         case 'critical': return '1'; // Highest
@@ -204,8 +209,8 @@ serve(async (req) => {
     let teamFieldKey = 'customfield_10001';
     let isTeamRequired = false;
 
-    // SUBR does not use the Team field — only NEURA needs a Team ID.
-    if (!isSubr) try {
+    // SAIR does not use the Team field — only NEURA needs a Team ID.
+    if (!isSair) try {
       const metaUrl = `https://${jiraDomain}/rest/api/3/issue/createmeta?projectKeys=${projectKey}&issuetypeNames=${encodeURIComponent(issueTypeName)}&expand=projects.issuetypes.fields`;
       const metaResp = await fetch(metaUrl, {
         method: 'GET',
@@ -237,7 +242,7 @@ serve(async (req) => {
       console.warn('Error fetching Jira create metadata:', e);
     }
 
-    const teamId = isSubr ? null : extractTeamId(teamInput);
+    const teamId = isSair ? null : extractTeamId(teamInput);
 
     if (isTeamRequired && !teamId) {
       return new Response(
@@ -323,19 +328,28 @@ serve(async (req) => {
             },
           ],
         },
-        issuetype: isSubr ? { id: subrIssueTypeId } : { name: issueTypeName },
-        priority: isSubr
+        issuetype: isSair ? { id: sairIssueTypeId } : { name: issueTypeName },
+        priority: isSair
           ? { id: jiraPriorityId(issue.priority) }
           : { name: jiraPriorityName(issue.priority) },
-        ...(isSubr ? {} : { labels: [issue.category, 'lovable-import'] }),
+        ...(isSair ? {} : { labels: [issue.category, 'lovable-import'] }),
         ...(teamId ? { [teamFieldKey]: teamId } : {}),
       };
 
-      if (isSubr) {
-        const productId = subrProductOptionForRobot(issue.robot_type);
-        if (productId) baseFields[SUBR_FIELDS.product] = { id: productId };
+      if (isSair) {
+        const productId = sairProductOptionForRobot(issue.robot_type);
+        if (productId) baseFields[SAIR_FIELDS.product] = { id: productId };
         if (issue.software_versions?.version) {
-          baseFields[SUBR_FIELDS.aiVersion] = issue.software_versions.version;
+          baseFields[SAIR_FIELDS.aiVersion] = issue.software_versions.version;
+        }
+        if (issue.steps_to_reproduce) {
+          baseFields[SAIR_FIELDS.reproSteps] = issue.steps_to_reproduce;
+        }
+        if (issue.expected_behavior) {
+          baseFields[SAIR_FIELDS.expectedResults] = issue.expected_behavior;
+        }
+        if (issue.actual_behavior) {
+          baseFields[SAIR_FIELDS.actualResults] = issue.actual_behavior;
         }
       }
 
@@ -360,7 +374,7 @@ serve(async (req) => {
           const diagnostic = await fetchJiraDiagnostic();
           console.error(`Jira diagnostic for ${issue.issue_number}:`, JSON.stringify(diagnostic));
           const permissionDenied = /无权|permission|permissions|not permitted|not authorized|cannot create|create issues/i.test(errorText);
-          const typeLabel = isSubr ? 'Bug' : issueTypeName;
+          const typeLabel = isSair ? 'Bug' : issueTypeName;
           const diagnosticText = ` Diagnostic: ${JSON.stringify(diagnostic)}`;
           const friendly = permissionDenied
             ? `Jira permission error: Jira says the configured account cannot create ${typeLabel} issues in project ${projectKey}. Check the account in the diagnostic and grant that exact account Browse project + Create issues for ${projectKey}. Raw: ${errorText}${diagnosticText}`
