@@ -55,9 +55,22 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
     e.preventDefault();
     if (!user) return;
 
+    const trimmedTitle = title.trim();
+    const trimmedDescription = description.trim();
+
+    if (!trimmedTitle) {
+      toast({ title: 'Missing required field', description: 'Please enter an issue title.', variant: 'destructive' });
+      return;
+    }
+
+    if (!trimmedDescription) {
+      toast({ title: 'Missing required field', description: 'Please enter a description.', variant: 'destructive' });
+      return;
+    }
+
     const issue = await createIssue({
-      title: title.trim(),
-      description: description.trim(),
+      title: trimmedTitle,
+      description: trimmedDescription,
       priority,
       category,
       robot_type: (robotType || null) as RobotType | null,
