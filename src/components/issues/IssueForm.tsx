@@ -9,7 +9,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { IssuePriority, IssueCategory, RobotType, ROBOT_TYPES, OTHER_EQUIPMENT } from '@/types/database';
 import { Camera, Loader2, X, Upload } from 'lucide-react';
-import { VoiceAssistant } from './VoiceAssistant';
 import { VersionCombobox } from './VersionCombobox';
 import { FieldVoiceInput } from './FieldVoiceInput';
 
