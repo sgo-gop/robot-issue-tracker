@@ -40,6 +40,7 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
   const [expectedBehavior, setExpectedBehavior] = useState('');
   const [actualBehavior, setActualBehavior] = useState('');
   const [files, setFiles] = useState<File[]>([]);
+  const [errors, setErrors] = useState<Record<string, boolean>>({});
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -57,16 +58,25 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
 
     const trimmedTitle = title.trim();
     const trimmedDescription = description.trim();
+    const trimmedSteps = stepsToReproduce.trim();
+    const trimmedExpected = expectedBehavior.trim();
+    const trimmedActual = actualBehavior.trim();
 
-    if (!trimmedTitle) {
-      toast({ title: 'Missing required field', description: 'Please enter an issue title.', variant: 'destructive' });
+    const newErrors: Record<string, boolean> = {};
+
+    if (!trimmedTitle) newErrors.title = true;
+    if (!trimmedDescription) newErrors.description = true;
+    if (!trimmedSteps) newErrors.steps = true;
+    if (!trimmedExpected) newErrors.expected = true;
+    if (!trimmedActual) newErrors.actual = true;
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      toast({ title: 'Missing required fields', description: 'Please fill in all highlighted fields before submitting.', variant: 'destructive' });
       return;
     }
 
-    if (!trimmedDescription) {
-      toast({ title: 'Missing required field', description: 'Please enter a description.', variant: 'destructive' });
-      return;
-    }
+    setErrors({});
 
     const issue = await createIssue({
       title: trimmedTitle,
@@ -129,14 +139,14 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="title">Issue Title *</Label>
+              <Label htmlFor="title" className={errors.title ? 'text-destructive' : ''}>Issue Title *</Label>
               <Input
                 id="title"
                 placeholder="Brief description of the issue"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => { setTitle(e.target.value); if (errors.title) setErrors((prev) => ({ ...prev, title: false })); }}
                 maxLength={200}
-                required
+                className={errors.title ? 'border-destructive focus-visible:ring-destructive' : ''}
               />
             </div>
 
@@ -236,63 +246,66 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="description">Description *</Label>
+              <Label htmlFor="description" className={errors.description ? 'text-destructive' : ''}>Description *</Label>
               <FieldVoiceInput field="description" value={description} onChange={setDescription} />
             </div>
             <Textarea
               id="description"
               placeholder="Detailed description of the issue..."
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => { setDescription(e.target.value); if (errors.description) setErrors((prev) => ({ ...prev, description: false })); }}
               rows={4}
               maxLength={2000}
-              required
+              className={errors.description ? 'border-destructive focus-visible:ring-destructive' : ''}
             />
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="steps">Steps to Reproduce</Label>
+              <Label htmlFor="steps" className={errors.steps ? 'text-destructive' : ''}>Steps to Reproduce *</Label>
               <FieldVoiceInput field="steps_to_reproduce" value={stepsToReproduce} onChange={setStepsToReproduce} />
             </div>
             <Textarea
               id="steps"
               placeholder="1. First step&#10;2. Second step&#10;3. ..."
               value={stepsToReproduce}
-              onChange={(e) => setStepsToReproduce(e.target.value)}
+              onChange={(e) => { setStepsToReproduce(e.target.value); if (errors.steps) setErrors((prev) => ({ ...prev, steps: false })); }}
               rows={3}
               maxLength={2000}
+              className={errors.steps ? 'border-destructive focus-visible:ring-destructive' : ''}
             />
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="expected">Expected Behavior</Label>
+                <Label htmlFor="expected" className={errors.expected ? 'text-destructive' : ''}>Expected Behavior *</Label>
                 <FieldVoiceInput field="expected_behavior" value={expectedBehavior} onChange={setExpectedBehavior} />
               </div>
               <Textarea
                 id="expected"
                 placeholder="What should happen?"
                 value={expectedBehavior}
-                onChange={(e) => setExpectedBehavior(e.target.value)}
+                onChange={(e) => { setExpectedBehavior(e.target.value); if (errors.expected) setErrors((prev) => ({ ...prev, expected: false })); }}
                 rows={2}
                 maxLength={1000}
+                className={errors.expected ? 'border-destructive focus-visible:ring-destructive' : ''}
               />
             </div>
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="actual">Actual Behavior</Label>
+                <Label htmlFor="actual" className={errors.actual ? 'text-destructive' : ''}>Actual Behavior *</Label>
                 <FieldVoiceInput field="actual_behavior" value={actualBehavior} onChange={setActualBehavior} />
               </div>
               <Textarea
                 id="actual"
                 placeholder="What actually happened?"
                 value={actualBehavior}
-                onChange={(e) => setActualBehavior(e.target.value)}
+                onChange={(e) => { setActualBehavior(e.target.value); if (errors.actual) setErrors((prev) => ({ ...prev, actual: false })); }}
                 rows={2}
                 maxLength={1000}
+                className={errors.actual ? 'border-destructive focus-visible:ring-destructive' : ''}
               />
             </div>
           </div>
