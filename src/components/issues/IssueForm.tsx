@@ -246,17 +246,17 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="description">Description *</Label>
+              <Label htmlFor="description" className={errors.description ? 'text-destructive' : ''}>Description *</Label>
               <FieldVoiceInput field="description" value={description} onChange={setDescription} />
             </div>
             <Textarea
               id="description"
               placeholder="Detailed description of the issue..."
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => { setDescription(e.target.value); if (errors.description) setErrors((prev) => ({ ...prev, description: false })); }}
               rows={4}
               maxLength={2000}
-              required
+              className={errors.description ? 'border-destructive focus-visible:ring-destructive' : ''}
             />
           </div>
 
