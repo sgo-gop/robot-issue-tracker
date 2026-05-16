@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface PDFReportProps {
   issues: Issue[];
@@ -40,6 +41,7 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
   const [softwareVersionFilter, setSoftwareVersionFilter] = useState<string>('all');
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [selectedJiraIds, setSelectedJiraIds] = useState<Set<string>>(new Set());
 
   const filteredIssues = issues.filter((issue) => {
     const matchesStatus = statusFilter === 'all' || issue.status === statusFilter;
@@ -62,6 +64,41 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
   // Issues that haven't been synced to Jira yet
   const unsyncedIssues = filteredIssues.filter((issue) => !issue.jira_issue_key);
   const alreadySyncedCount = filteredIssues.length - unsyncedIssues.length;
+
+  // Keep selection in sync with available unsynced issues (default: all selected)
+  const unsyncedIdsKey = unsyncedIssues.map((i) => i.id).join(',');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useState(() => {
+    setSelectedJiraIds(new Set(unsyncedIssues.map((i) => i.id)));
+    return null;
+  });
+  // Reset when the set of unsynced issues changes
+  // (avoid stale selections referencing already-synced issues)
+  if (
+    selectedJiraIds.size > 0 &&
+    Array.from(selectedJiraIds).some((id) => !unsyncedIssues.find((i) => i.id === id))
+  ) {
+    // recompute synchronously
+    const next = new Set(Array.from(selectedJiraIds).filter((id) => unsyncedIssues.find((i) => i.id === id)));
+    if (next.size !== selectedJiraIds.size) {
+      // schedule update
+      queueMicrotask(() => setSelectedJiraIds(next));
+    }
+  }
+
+  const toggleIssueSelection = (id: string, checked: boolean) => {
+    setSelectedJiraIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id); else next.delete(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = (checked: boolean) => {
+    setSelectedJiraIds(checked ? new Set(unsyncedIssues.map((i) => i.id)) : new Set());
+  };
+
+  const selectedUnsyncedIssues = unsyncedIssues.filter((i) => selectedJiraIds.has(i.id));
 
   const generatePDF = async () => {
     setIsGenerating(true);
@@ -311,12 +348,20 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
       });
       return;
     }
+    if (selectedUnsyncedIssues.length === 0) {
+      toast({
+        title: 'No issues selected',
+        description: 'Please select at least one issue to submit to Jira.',
+        variant: 'destructive',
+      });
+      return;
+    }
     
     setIsSubmittingToJira(true);
     try {
       const versionMap: Record<string, string> = {};
       versions.forEach((v) => { versionMap[v.id] = v.version; });
-      const enrichedIssues = unsyncedIssues.map((i) => ({
+      const enrichedIssues = selectedUnsyncedIssues.map((i) => ({
         ...i,
         software_version: i.software_version_id ? versionMap[i.software_version_id] || null : null,
         gui_version: i.gui_version_id ? versionMap[i.gui_version_id] || null : null,
