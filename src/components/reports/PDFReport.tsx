@@ -326,7 +326,7 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
         safety_firmware_version: i.safety_firmware_version_id ? versionMap[i.safety_firmware_version_id] || null : null,
       }));
       const { data, error } = await supabase.functions.invoke('submit-to-jira', {
-        body: { issues: enrichedIssues, projectKey: jiraProjectKey }
+        body: { issues: enrichedIssues, projectKey: jiraProjectKey, reporterName }
       });
 
       if (error) {
