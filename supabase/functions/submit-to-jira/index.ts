@@ -342,14 +342,21 @@ serve(async (req) => {
         if (issue.software_versions?.version) {
           baseFields[SAIR_FIELDS.aiVersion] = issue.software_versions.version;
         }
+        const toAdf = (text: string) => ({
+          type: 'doc',
+          version: 1,
+          content: [
+            { type: 'paragraph', content: [{ type: 'text', text }] },
+          ],
+        });
         if (issue.steps_to_reproduce) {
-          baseFields[SAIR_FIELDS.reproSteps] = issue.steps_to_reproduce;
+          baseFields[SAIR_FIELDS.reproSteps] = toAdf(issue.steps_to_reproduce);
         }
         if (issue.expected_behavior) {
-          baseFields[SAIR_FIELDS.expectedResults] = issue.expected_behavior;
+          baseFields[SAIR_FIELDS.expectedResults] = toAdf(issue.expected_behavior);
         }
         if (issue.actual_behavior) {
-          baseFields[SAIR_FIELDS.actualResults] = issue.actual_behavior;
+          baseFields[SAIR_FIELDS.actualResults] = toAdf(issue.actual_behavior);
         }
       }
 
