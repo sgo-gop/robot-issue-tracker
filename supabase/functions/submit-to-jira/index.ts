@@ -133,8 +133,8 @@ serve(async (req) => {
       return name
         .trim()
         .toLowerCase()
-        .replace(/@/g, '_at_')
-        .replace(/[^a-z0-9._-]+/g, '-')
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9._@-]+/g, '-')
         .replace(/-+/g, '-')
         .replace(/^-+|-+$/g, '')
         .slice(0, 100);
