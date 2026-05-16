@@ -262,16 +262,17 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="steps">Steps to Reproduce</Label>
+              <Label htmlFor="steps" className={errors.steps ? 'text-destructive' : ''}>Steps to Reproduce *</Label>
               <FieldVoiceInput field="steps_to_reproduce" value={stepsToReproduce} onChange={setStepsToReproduce} />
             </div>
             <Textarea
               id="steps"
               placeholder="1. First step&#10;2. Second step&#10;3. ..."
               value={stepsToReproduce}
-              onChange={(e) => setStepsToReproduce(e.target.value)}
+              onChange={(e) => { setStepsToReproduce(e.target.value); if (errors.steps) setErrors((prev) => ({ ...prev, steps: false })); }}
               rows={3}
               maxLength={2000}
+              className={errors.steps ? 'border-destructive focus-visible:ring-destructive' : ''}
             />
           </div>
 
