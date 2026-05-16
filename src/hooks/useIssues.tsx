@@ -10,6 +10,8 @@ interface CreateIssueData {
   category: IssueCategory;
   robot_type: RobotType | null;
   software_version_id?: string | null;
+  gui_version_id?: string | null;
+  ai_version_id?: string | null;
   steps_to_reproduce?: string;
   expected_behavior?: string;
   actual_behavior?: string;

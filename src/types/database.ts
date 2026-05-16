@@ -20,7 +20,10 @@ export interface SoftwareVersion {
   version: string;
   description?: string | null;
   created_at?: string;
+  version_type?: VersionType;
 }
+
+export type VersionType = 'software' | 'gui' | 'ai';
 
 export interface Issue {
   id: string;

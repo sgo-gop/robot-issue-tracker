@@ -49,11 +49,13 @@ export type Database = {
       issues: {
         Row: {
           actual_behavior: string | null
+          ai_version_id: string | null
           category: Database["public"]["Enums"]["issue_category"]
           closed_at: string | null
           created_at: string
           description: string
           expected_behavior: string | null
+          gui_version_id: string | null
           id: string
           issue_number: string
           jira_issue_key: string | null
@@ -68,11 +70,13 @@ export type Database = {
         }
         Insert: {
           actual_behavior?: string | null
+          ai_version_id?: string | null
           category?: Database["public"]["Enums"]["issue_category"]
           closed_at?: string | null
           created_at?: string
           description: string
           expected_behavior?: string | null
+          gui_version_id?: string | null
           id?: string
           issue_number: string
           jira_issue_key?: string | null
@@ -87,11 +91,13 @@ export type Database = {
         }
         Update: {
           actual_behavior?: string | null
+          ai_version_id?: string | null
           category?: Database["public"]["Enums"]["issue_category"]
           closed_at?: string | null
           created_at?: string
           description?: string
           expected_behavior?: string | null
+          gui_version_id?: string | null
           id?: string
           issue_number?: string
           jira_issue_key?: string | null
@@ -141,18 +147,21 @@ export type Database = {
           description: string | null
           id: string
           version: string
+          version_type: string
         }
         Insert: {
           created_at?: string
           description?: string | null
           id?: string
           version: string
+          version_type?: string
         }
         Update: {
           created_at?: string
           description?: string | null
           id?: string
           version?: string
+          version_type?: string
         }
         Relationships: []
       }
