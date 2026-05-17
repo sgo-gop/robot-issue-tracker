@@ -291,11 +291,11 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
               value={stepsToReproduce}
               onChange={(e) => { setStepsToReproduce(e.target.value); if (errors.steps) setErrors((prev) => ({ ...prev, steps: false })); }}
               rows={3}
-              maxLength={2000}
+              maxLength={32000}
               className={errors.steps ? 'border-destructive focus-visible:ring-destructive' : ''}
             />
-            <p className={`text-xs text-right ${stepsToReproduce.length > 1800 ? 'text-destructive' : 'text-muted-foreground'}`}>
-              {stepsToReproduce.length}/2000 characters
+            <p className={`text-xs text-right ${stepsToReproduce.length >= 32000 ? 'text-destructive' : stepsToReproduce.length > 28800 ? 'text-amber-500' : 'text-muted-foreground'}`}>
+              {stepsToReproduce.length >= 32000 ? 'Limit reached — ' : ''}{stepsToReproduce.length}/32000 characters
             </p>
           </div>
 
