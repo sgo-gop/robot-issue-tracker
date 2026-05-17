@@ -13,7 +13,7 @@ import type { IssuePriority, IssueCategory } from '@/types/database';
 import { useSoftwareVersions } from '@/hooks/useSoftwareVersions';
 import { useAuth } from '@/hooks/useAuth';
 import { useSession } from '@/hooks/useSession';
-import { FileDown, CalendarIcon, Loader2, Send, Copy, Check } from 'lucide-react';
+import { FileDown, CalendarIcon, Loader2, Send, Copy, Check, Pencil } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
@@ -43,6 +43,57 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [selectedJiraIds, setSelectedJiraIds] = useState<Set<string>>(new Set());
+  const [editingIssue, setEditingIssue] = useState<Issue | null>(null);
+  const [editForm, setEditForm] = useState({
+    title: '',
+    description: '',
+    priority: 'medium' as IssuePriority,
+    category: 'other' as IssueCategory,
+    steps_to_reproduce: '',
+    expected_behavior: '',
+    actual_behavior: '',
+  });
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+  const openEditDialog = (issue: Issue) => {
+    setEditingIssue(issue);
+    setEditForm({
+      title: issue.title || '',
+      description: issue.description || '',
+      priority: issue.priority,
+      category: issue.category,
+      steps_to_reproduce: issue.steps_to_reproduce || '',
+      expected_behavior: issue.expected_behavior || '',
+      actual_behavior: issue.actual_behavior || '',
+    });
+  };
+
+  const saveEdit = async () => {
+    if (!editingIssue) return;
+    setIsSavingEdit(true);
+    try {
+      const { error } = await supabase
+        .from('issues')
+        .update({
+          title: editForm.title.trim(),
+          description: editForm.description.trim(),
+          priority: editForm.priority,
+          category: editForm.category,
+          steps_to_reproduce: editForm.steps_to_reproduce.trim() || null,
+          expected_behavior: editForm.expected_behavior.trim() || null,
+          actual_behavior: editForm.actual_behavior.trim() || null,
+        })
+        .eq('id', editingIssue.id);
+      if (error) throw error;
+      toast({ title: 'Issue updated' });
+      queryClient.invalidateQueries({ queryKey: ['issues'] });
+      setEditingIssue(null);
+    } catch (e) {
+      toast({ title: 'Failed to update', description: e instanceof Error ? e.message : String(e), variant: 'destructive' });
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
 
   const filteredIssues = issues.filter((issue) => {
     const matchesStatus = statusFilter === 'all' || issue.status === statusFilter;
@@ -571,6 +622,15 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
                     </div>
                     <div className="text-sm font-medium truncate">{issue.title}</div>
                   </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); openEditDialog(issue); }}
+                  >
+                    <Pencil className="h-4 w-4 mr-1" />
+                    Edit
+                  </Button>
                 </label>
               ))}
             </div>
