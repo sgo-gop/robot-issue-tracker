@@ -737,20 +737,32 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
             </div>
             <div className="space-y-2">
               <Label>Description</Label>
-              <Textarea rows={4} value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} />
+              <Textarea rows={4} maxLength={32000} value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} />
+              <p className={`text-xs text-right ${editForm.description.length >= 32000 ? 'text-destructive' : editForm.description.length > 28800 ? 'text-amber-500' : 'text-muted-foreground'}`}>
+                {editForm.description.length >= 32000 ? 'Limit reached — ' : ''}{editForm.description.length}/32000 characters
+              </p>
             </div>
             <div className="space-y-2">
               <Label>Steps to Reproduce</Label>
-              <Textarea rows={3} value={editForm.steps_to_reproduce} onChange={(e) => setEditForm({ ...editForm, steps_to_reproduce: e.target.value })} />
+              <Textarea rows={3} maxLength={32000} value={editForm.steps_to_reproduce} onChange={(e) => setEditForm({ ...editForm, steps_to_reproduce: e.target.value })} />
+              <p className={`text-xs text-right ${editForm.steps_to_reproduce.length >= 32000 ? 'text-destructive' : editForm.steps_to_reproduce.length > 28800 ? 'text-amber-500' : 'text-muted-foreground'}`}>
+                {editForm.steps_to_reproduce.length >= 32000 ? 'Limit reached — ' : ''}{editForm.steps_to_reproduce.length}/32000 characters
+              </p>
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label>Expected Behavior</Label>
-                <Textarea rows={3} value={editForm.expected_behavior} onChange={(e) => setEditForm({ ...editForm, expected_behavior: e.target.value })} />
+                <Textarea rows={3} maxLength={255} value={editForm.expected_behavior} onChange={(e) => setEditForm({ ...editForm, expected_behavior: e.target.value })} />
+                <p className={`text-xs text-right font-medium ${editForm.expected_behavior.length >= 255 ? 'text-destructive' : editForm.expected_behavior.length > 230 ? 'text-amber-500' : 'text-muted-foreground'}`}>
+                  {editForm.expected_behavior.length >= 255 ? 'Limit reached — ' : ''}{editForm.expected_behavior.length}/255 characters
+                </p>
               </div>
               <div className="space-y-2">
                 <Label>Actual Behavior</Label>
-                <Textarea rows={3} value={editForm.actual_behavior} onChange={(e) => setEditForm({ ...editForm, actual_behavior: e.target.value })} />
+                <Textarea rows={3} maxLength={255} value={editForm.actual_behavior} onChange={(e) => setEditForm({ ...editForm, actual_behavior: e.target.value })} />
+                <p className={`text-xs text-right font-medium ${editForm.actual_behavior.length >= 255 ? 'text-destructive' : editForm.actual_behavior.length > 230 ? 'text-amber-500' : 'text-muted-foreground'}`}>
+                  {editForm.actual_behavior.length >= 255 ? 'Limit reached — ' : ''}{editForm.actual_behavior.length}/255 characters
+                </p>
               </div>
             </div>
           </div>
