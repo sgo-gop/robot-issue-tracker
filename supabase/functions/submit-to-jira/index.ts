@@ -10,7 +10,6 @@ interface Issue {
   id: string;
   issue_number: string;
   title: string;
-  description: string;
   priority: string;
   status: string;
   category: string;
