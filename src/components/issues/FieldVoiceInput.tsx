@@ -4,7 +4,7 @@ import { Mic, Square, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
-type FieldKind = 'description' | 'steps_to_reproduce' | 'expected_behavior' | 'actual_behavior';
+type FieldKind = 'steps_to_reproduce' | 'expected_behavior' | 'actual_behavior';
 
 interface FieldVoiceInputProps {
   value: string;

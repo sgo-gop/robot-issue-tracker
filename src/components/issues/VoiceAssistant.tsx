@@ -12,7 +12,6 @@ import { IssuePriority, IssueCategory } from '@/types/database';
 
 interface ParsedIssueData {
   title: string;
-  description: string;
   priority: IssuePriority;
   category: IssueCategory;
   steps_to_reproduce: string;
