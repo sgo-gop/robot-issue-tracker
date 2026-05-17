@@ -46,7 +46,6 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
   const [editingIssue, setEditingIssue] = useState<Issue | null>(null);
   const [editForm, setEditForm] = useState({
     title: '',
-    description: '',
     priority: 'medium' as IssuePriority,
     category: 'other' as IssueCategory,
     steps_to_reproduce: '',
@@ -59,7 +58,6 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
     setEditingIssue(issue);
     setEditForm({
       title: issue.title || '',
-      description: issue.description || '',
       priority: issue.priority,
       category: issue.category,
       steps_to_reproduce: issue.steps_to_reproduce || '',
@@ -76,7 +74,6 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
         .from('issues')
         .update({
           title: editForm.title.trim(),
-          description: editForm.description.trim(),
           priority: editForm.priority,
           category: editForm.category,
           steps_to_reproduce: editForm.steps_to_reproduce.trim() || null,
@@ -311,11 +308,6 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
                 <div class="issue-field-label">Safety-Firmware</div>
                 <div class="issue-field-value">${versionOf(issue.safety_firmware_version_id)}</div>
               </div>
-            </div>
-
-            <div class="issue-section">
-              <div class="issue-section-title">Description</div>
-              <div class="issue-section-content">${escapeHtml(issue.description)}</div>
             </div>
 
             ${issue.steps_to_reproduce ? `
