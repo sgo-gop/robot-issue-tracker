@@ -46,7 +46,6 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
   const [editingIssue, setEditingIssue] = useState<Issue | null>(null);
   const [editForm, setEditForm] = useState({
     title: '',
-    description: '',
     priority: 'medium' as IssuePriority,
     category: 'other' as IssueCategory,
     steps_to_reproduce: '',
@@ -59,7 +58,6 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
     setEditingIssue(issue);
     setEditForm({
       title: issue.title || '',
-      description: issue.description || '',
       priority: issue.priority,
       category: issue.category,
       steps_to_reproduce: issue.steps_to_reproduce || '',
@@ -76,7 +74,6 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
         .from('issues')
         .update({
           title: editForm.title.trim(),
-          description: editForm.description.trim(),
           priority: editForm.priority,
           category: editForm.category,
           steps_to_reproduce: editForm.steps_to_reproduce.trim() || null,
@@ -311,11 +308,6 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
                 <div class="issue-field-label">Safety-Firmware</div>
                 <div class="issue-field-value">${versionOf(issue.safety_firmware_version_id)}</div>
               </div>
-            </div>
-
-            <div class="issue-section">
-              <div class="issue-section-title">Description</div>
-              <div class="issue-section-content">${escapeHtml(issue.description)}</div>
             </div>
 
             ${issue.steps_to_reproduce ? `
@@ -736,13 +728,6 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Description</Label>
-              <Textarea rows={4} maxLength={32000} value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} />
-              <p className={`text-xs text-right ${editForm.description.length >= 32000 ? 'text-destructive' : editForm.description.length > 28800 ? 'text-amber-500' : 'text-muted-foreground'}`}>
-                {editForm.description.length >= 32000 ? 'Limit reached — ' : ''}{editForm.description.length}/32000 characters
-              </p>
-            </div>
-            <div className="space-y-2">
               <Label>Steps to Reproduce</Label>
               <Textarea rows={3} maxLength={32000} value={editForm.steps_to_reproduce} onChange={(e) => setEditForm({ ...editForm, steps_to_reproduce: e.target.value })} />
               <p className={`text-xs text-right ${editForm.steps_to_reproduce.length >= 32000 ? 'text-destructive' : editForm.steps_to_reproduce.length > 28800 ? 'text-amber-500' : 'text-muted-foreground'}`}>
@@ -768,7 +753,7 @@ export const PDFReport = ({ issues }: PDFReportProps) => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditingIssue(null)} disabled={isSavingEdit}>Cancel</Button>
-            <Button onClick={saveEdit} disabled={isSavingEdit || !editForm.title.trim() || !editForm.description.trim()}>
+            <Button onClick={saveEdit} disabled={isSavingEdit || !editForm.title.trim()}>
               {isSavingEdit && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save Changes
             </Button>

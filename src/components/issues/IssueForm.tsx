@@ -27,7 +27,6 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
   const { toast } = useToast();
 
   const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<IssuePriority>('medium');
   const [category, setCategory] = useState<IssueCategory>('other');
   const [robotType, setRobotType] = useState<string>(user?.robotType || '');
@@ -74,7 +73,6 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
     if (!user) return;
 
     const trimmedTitle = title.trim();
-    const trimmedDescription = description.trim();
     const trimmedSteps = stepsToReproduce.trim();
     const trimmedExpected = expectedBehavior.trim();
     const trimmedActual = actualBehavior.trim();
@@ -82,7 +80,6 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
     const newErrors: Record<string, boolean> = {};
 
     if (!trimmedTitle) newErrors.title = true;
-    if (!trimmedDescription) newErrors.description = true;
     if (!trimmedSteps) newErrors.steps = true;
     if (!trimmedExpected) newErrors.expected = true;
     if (!trimmedActual) newErrors.actual = true;
@@ -97,7 +94,6 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
 
     const issue = await createIssue({
       title: trimmedTitle,
-      description: trimmedDescription,
       priority,
       category,
       robot_type: (robotType || null) as RobotType | null,
@@ -121,7 +117,6 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
 
     // Reset form
     setTitle('');
-    setDescription('');
     setPriority('medium');
     setCategory('other');
     setRobotType(user?.robotType || '');
@@ -259,25 +254,6 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
               <Label>Safety-Firmware</Label>
               <VersionCombobox versionType="safety_firmware" value={safetyFirmwareVersionId} onChange={setSafetyFirmwareVersionId} placeholder="Select or type Safety-Firmware" />
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="description" className={errors.description ? 'text-destructive' : ''}>Description *</Label>
-              <FieldVoiceInput field="description" value={description} onChange={setDescription} />
-            </div>
-            <Textarea
-              id="description"
-              placeholder="Detailed description of the issue..."
-              value={description}
-              onChange={(e) => { setDescription(e.target.value); if (errors.description) setErrors((prev) => ({ ...prev, description: false })); }}
-              rows={4}
-              maxLength={32000}
-              className={errors.description ? 'border-destructive focus-visible:ring-destructive' : ''}
-            />
-            <p className={`text-xs text-right ${description.length >= 32000 ? 'text-destructive' : description.length > 28800 ? 'text-amber-500' : 'text-muted-foreground'}`}>
-              {description.length >= 32000 ? 'Limit reached — ' : ''}{description.length}/32000 characters
-            </p>
           </div>
 
           <div className="space-y-2">

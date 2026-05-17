@@ -10,7 +10,6 @@ interface Issue {
   id: string;
   issue_number: string;
   title: string;
-  description: string;
   priority: string;
   status: string;
   category: string;
@@ -331,9 +330,6 @@ serve(async (req) => {
         safetyLogic ? `*Safety-Logic:* ${safetyLogic}` : null,
         safetyFirmware ? `*Safety-Firmware:* ${safetyFirmware}` : null,
         `*Created:* ${new Date(issue.created_at).toLocaleString()}`,
-        '',
-        '*Description:*',
-        issue.description,
       ];
 
       if (issue.steps_to_reproduce) {

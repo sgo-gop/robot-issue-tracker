@@ -57,11 +57,6 @@ const IssueDetails = ({ issue }: { issue: Issue }) => {
         )}
       </div>
 
-      <div>
-        <p className="text-sm font-medium text-muted-foreground mb-1">Description</p>
-        <p className="whitespace-pre-wrap rounded-md bg-muted p-3">{issue.description}</p>
-      </div>
-
       {issue.steps_to_reproduce && (
         <div>
           <p className="text-sm font-medium text-muted-foreground mb-1">Steps to Reproduce</p>
@@ -126,7 +121,7 @@ export const IssueTable = ({ issues, showActions = false, onCloseIssue, isClosin
     const matchesSearch =
       issue.title.toLowerCase().includes(search.toLowerCase()) ||
       issue.issue_number.toLowerCase().includes(search.toLowerCase()) ||
-      issue.description.toLowerCase().includes(search.toLowerCase());
+      (issue.steps_to_reproduce || '').toLowerCase().includes(search.toLowerCase());
     const matchesPriority = priorityFilter === 'all' || issue.priority === priorityFilter;
     const matchesStatus = statusFilter === 'all' || issue.status === statusFilter;
     const matchesCategory = categoryFilter === 'all' || issue.category === categoryFilter;

@@ -53,7 +53,6 @@ export type Database = {
           category: Database["public"]["Enums"]["issue_category"]
           closed_at: string | null
           created_at: string
-          description: string
           drive_firmware_version_id: string | null
           expected_behavior: string | null
           gui_version_id: string | null
@@ -78,7 +77,6 @@ export type Database = {
           category?: Database["public"]["Enums"]["issue_category"]
           closed_at?: string | null
           created_at?: string
-          description: string
           drive_firmware_version_id?: string | null
           expected_behavior?: string | null
           gui_version_id?: string | null
@@ -103,7 +101,6 @@ export type Database = {
           category?: Database["public"]["Enums"]["issue_category"]
           closed_at?: string | null
           created_at?: string
-          description?: string
           drive_firmware_version_id?: string | null
           expected_behavior?: string | null
           gui_version_id?: string | null

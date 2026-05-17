@@ -22,10 +22,9 @@ serve(async (req) => {
     
 Extract the following fields from the user's spoken description:
 - title: A brief title for the issue (max 200 chars)
-- description: Detailed description of the issue
 - priority: One of "low", "medium", "high", "critical" (default to "medium" if unclear)
 - category: One of "hardware", "software", "mechanical", "electrical", "other" (default to "other" if unclear)
-- steps_to_reproduce: Steps to reproduce the issue (if mentioned)
+- steps_to_reproduce: Detailed description and steps to reproduce the issue
 - expected_behavior: What should happen (if mentioned)
 - actual_behavior: What actually happened (if mentioned)
 
@@ -53,14 +52,13 @@ Return ONLY valid JSON with these fields. If a field wasn't mentioned, use empty
                 type: "object",
                 properties: {
                   title: { type: "string", description: "Brief issue title" },
-                  description: { type: "string", description: "Detailed description" },
                   priority: { type: "string", enum: ["low", "medium", "high", "critical"] },
                   category: { type: "string", enum: ["hardware", "software", "mechanical", "electrical", "other"] },
-                  steps_to_reproduce: { type: "string", description: "Steps to reproduce" },
+                  steps_to_reproduce: { type: "string", description: "Detailed description and steps to reproduce" },
                   expected_behavior: { type: "string", description: "Expected behavior" },
                   actual_behavior: { type: "string", description: "Actual behavior" },
                 },
-                required: ["title", "description", "priority", "category"],
+                required: ["title", "steps_to_reproduce", "priority", "category"],
                 additionalProperties: false,
               },
             },
