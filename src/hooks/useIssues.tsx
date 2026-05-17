@@ -5,7 +5,6 @@ import { useToast } from '@/hooks/use-toast';
 
 interface CreateIssueData {
   title: string;
-  description: string;
   priority: IssuePriority;
   category: IssueCategory;
   robot_type: RobotType | null;
