@@ -275,6 +275,9 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
               maxLength={2000}
               className={errors.description ? 'border-destructive focus-visible:ring-destructive' : ''}
             />
+            <p className={`text-xs text-right ${description.length > 1800 ? 'text-destructive' : 'text-muted-foreground'}`}>
+              {description.length}/2000 characters
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -291,6 +294,9 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
               maxLength={2000}
               className={errors.steps ? 'border-destructive focus-visible:ring-destructive' : ''}
             />
+            <p className={`text-xs text-right ${stepsToReproduce.length > 1800 ? 'text-destructive' : 'text-muted-foreground'}`}>
+              {stepsToReproduce.length}/2000 characters
+            </p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -308,6 +314,9 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
                 maxLength={1000}
                 className={errors.expected ? 'border-destructive focus-visible:ring-destructive' : ''}
               />
+              <p className={`text-xs text-right ${expectedBehavior.length > 900 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                {expectedBehavior.length}/1000 characters
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -324,6 +333,9 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
                 maxLength={1000}
                 className={errors.actual ? 'border-destructive focus-visible:ring-destructive' : ''}
               />
+              <p className={`text-xs text-right ${actualBehavior.length > 900 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                {actualBehavior.length}/1000 characters
+              </p>
             </div>
           </div>
 
