@@ -9,6 +9,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Issue, IssueStatus, IssueAttachment } from '@/types/database';
 import { ROBOT_TYPES } from '@/types/database';
+import type { IssuePriority, IssueCategory } from '@/types/database';
 import { useSoftwareVersions } from '@/hooks/useSoftwareVersions';
 import { useAuth } from '@/hooks/useAuth';
 import { useSession } from '@/hooks/useSession';
