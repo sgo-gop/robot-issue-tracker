@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { IssuePriority, IssueCategory, RobotType, ROBOT_TYPES, OTHER_EQUIPMENT } from '@/types/database';
-import { Camera, Loader2, X, Upload } from 'lucide-react';
+import { Camera, Loader2, X, Upload, Video, Film } from 'lucide-react';
 import { VersionCombobox } from './VersionCombobox';
 import { FieldVoiceInput } from './FieldVoiceInput';
 import { useToast } from '@/hooks/use-toast';
@@ -22,6 +22,8 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
   const { createIssue, isCreating } = useIssues();
   const uploadAttachment = useUploadAttachment();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const videoCaptureRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const [title, setTitle] = useState('');
@@ -42,10 +44,25 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
   const [files, setFiles] = useState<File[]>([]);
   const [errors, setErrors] = useState<Record<string, boolean>>({});
 
+  const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setFiles((prev) => [...prev, ...Array.from(e.target.files!)]);
+    if (!e.target.files) return;
+    const incoming = Array.from(e.target.files);
+    const accepted: File[] = [];
+    for (const f of incoming) {
+      if (f.type.startsWith('video/') && f.size > MAX_VIDEO_BYTES) {
+        toast({
+          title: 'Video too large',
+          description: `"${f.name}" exceeds the 100 MB limit. Please compress or re-upload a smaller video.`,
+          variant: 'destructive',
+        });
+        continue;
+      }
+      accepted.push(f);
     }
+    if (accepted.length) setFiles((prev) => [...prev, ...accepted]);
+    e.target.value = '';
   };
 
   const removeFile = (index: number) => {
@@ -338,6 +355,22 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
                 onChange={handleFileChange}
                 className="hidden"
               />
+              <input
+                ref={videoInputRef}
+                type="file"
+                accept="video/*"
+                multiple
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <input
+                ref={videoCaptureRef}
+                type="file"
+                accept="video/*"
+                capture="environment"
+                onChange={handleFileChange}
+                className="hidden"
+              />
               <Button
                 type="button"
                 variant="outline"
@@ -358,6 +391,22 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
               >
                 <Camera className="mr-2 h-4 w-4" />
                 Take Photo
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => videoInputRef.current?.click()}
+              >
+                <Film className="mr-2 h-4 w-4" />
+                Upload Video
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => videoCaptureRef.current?.click()}
+              >
+                <Video className="mr-2 h-4 w-4" />
+                Record Video
               </Button>
             </div>
           </div>
