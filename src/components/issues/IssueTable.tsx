@@ -7,9 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { PriorityBadge, StatusBadge, CategoryBadge } from '@/components/badges/IssueBadges';
 import { Issue, IssuePriority, IssueStatus, IssueCategory } from '@/types/database';
-import { Search, Eye, CheckCircle, Loader2 } from 'lucide-react';
+import { Search, Eye, CheckCircle, Loader2, Pencil } from 'lucide-react';
 import { useIssues, useIssueAttachments } from '@/hooks/useIssues';
 import { supabase } from '@/integrations/supabase/client';
+import { EditIssueDialog } from './EditIssueDialog';
 
 interface IssueTableProps {
   issues: Issue[];
@@ -119,6 +120,7 @@ export const IssueTable = ({ issues, showActions = false, onCloseIssue, isClosin
   const [statusFilter, setStatusFilter] = useState<IssueStatus | 'all'>('all');
   const [categoryFilter, setCategoryFilter] = useState<IssueCategory | 'all'>('all');
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
+  const [editingIssue, setEditingIssue] = useState<Issue | null>(null);
 
   const filteredIssues = issues.filter((issue) => {
     const matchesSearch =
@@ -218,6 +220,9 @@ export const IssueTable = ({ issues, showActions = false, onCloseIssue, isClosin
                       <Button size="sm" variant="ghost" onClick={() => setSelectedIssue(issue)}>
                         <Eye className="h-4 w-4" />
                       </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setEditingIssue(issue)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
                       {showActions && issue.status === 'open' && (
                         <Button
                           size="sm"
@@ -249,6 +254,8 @@ export const IssueTable = ({ issues, showActions = false, onCloseIssue, isClosin
           {selectedIssue && <IssueDetails issue={selectedIssue} />}
         </DialogContent>
       </Dialog>
+
+      <EditIssueDialog issue={editingIssue} onClose={() => setEditingIssue(null)} />
     </div>
   );
 };
