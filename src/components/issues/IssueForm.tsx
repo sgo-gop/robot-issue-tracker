@@ -272,11 +272,11 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
               value={description}
               onChange={(e) => { setDescription(e.target.value); if (errors.description) setErrors((prev) => ({ ...prev, description: false })); }}
               rows={4}
-              maxLength={2000}
+              maxLength={32000}
               className={errors.description ? 'border-destructive focus-visible:ring-destructive' : ''}
             />
-            <p className={`text-xs text-right ${description.length > 1800 ? 'text-destructive' : 'text-muted-foreground'}`}>
-              {description.length}/2000 characters
+            <p className={`text-xs text-right ${description.length >= 32000 ? 'text-destructive' : description.length > 28800 ? 'text-amber-500' : 'text-muted-foreground'}`}>
+              {description.length >= 32000 ? 'Limit reached — ' : ''}{description.length}/32000 characters
             </p>
           </div>
 
