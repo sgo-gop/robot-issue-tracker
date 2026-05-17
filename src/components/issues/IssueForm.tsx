@@ -294,6 +294,9 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
               maxLength={2000}
               className={errors.steps ? 'border-destructive focus-visible:ring-destructive' : ''}
             />
+            <p className={`text-xs text-right ${stepsToReproduce.length > 1800 ? 'text-destructive' : 'text-muted-foreground'}`}>
+              {stepsToReproduce.length}/2000 characters
+            </p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
