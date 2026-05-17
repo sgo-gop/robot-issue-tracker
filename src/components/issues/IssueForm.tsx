@@ -311,11 +311,11 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
                 value={expectedBehavior}
                 onChange={(e) => { setExpectedBehavior(e.target.value); if (errors.expected) setErrors((prev) => ({ ...prev, expected: false })); }}
                 rows={2}
-                maxLength={1000}
+                maxLength={255}
                 className={errors.expected ? 'border-destructive focus-visible:ring-destructive' : ''}
               />
-              <p className={`text-xs text-right ${expectedBehavior.length > 900 ? 'text-destructive' : 'text-muted-foreground'}`}>
-                {expectedBehavior.length}/1000 characters
+              <p className={`text-xs text-right font-medium ${expectedBehavior.length >= 255 ? 'text-destructive' : expectedBehavior.length > 230 ? 'text-amber-500' : 'text-muted-foreground'}`}>
+                {expectedBehavior.length >= 255 ? 'Limit reached — ' : ''}{expectedBehavior.length}/255 characters
               </p>
             </div>
 
@@ -330,11 +330,11 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
                 value={actualBehavior}
                 onChange={(e) => { setActualBehavior(e.target.value); if (errors.actual) setErrors((prev) => ({ ...prev, actual: false })); }}
                 rows={2}
-                maxLength={1000}
+                maxLength={255}
                 className={errors.actual ? 'border-destructive focus-visible:ring-destructive' : ''}
               />
-              <p className={`text-xs text-right ${actualBehavior.length > 900 ? 'text-destructive' : 'text-muted-foreground'}`}>
-                {actualBehavior.length}/1000 characters
+              <p className={`text-xs text-right font-medium ${actualBehavior.length >= 255 ? 'text-destructive' : actualBehavior.length > 230 ? 'text-amber-500' : 'text-muted-foreground'}`}>
+                {actualBehavior.length >= 255 ? 'Limit reached — ' : ''}{actualBehavior.length}/255 characters
               </p>
             </div>
           </div>
