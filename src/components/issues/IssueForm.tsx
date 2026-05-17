@@ -275,6 +275,9 @@ export const IssueForm = ({ onSuccess }: IssueFormProps) => {
               maxLength={2000}
               className={errors.description ? 'border-destructive focus-visible:ring-destructive' : ''}
             />
+            <p className={`text-xs text-right ${description.length > 1800 ? 'text-destructive' : 'text-muted-foreground'}`}>
+              {description.length}/2000 characters
+            </p>
           </div>
 
           <div className="space-y-2">
