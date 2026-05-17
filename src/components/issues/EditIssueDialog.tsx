@@ -23,7 +23,6 @@ export const EditIssueDialog = ({ issue, onClose, description }: EditIssueDialog
   const [isSaving, setIsSaving] = useState(false);
   const [form, setForm] = useState({
     title: '',
-    description: '',
     priority: 'medium' as IssuePriority,
     category: 'other' as IssueCategory,
     steps_to_reproduce: '',
@@ -35,7 +34,6 @@ export const EditIssueDialog = ({ issue, onClose, description }: EditIssueDialog
     if (!issue) return;
     setForm({
       title: issue.title || '',
-      description: issue.description || '',
       priority: issue.priority,
       category: issue.category,
       steps_to_reproduce: issue.steps_to_reproduce || '',
@@ -53,7 +51,6 @@ export const EditIssueDialog = ({ issue, onClose, description }: EditIssueDialog
         .from('issues')
         .update({
           title: form.title.trim(),
-          description: form.description.trim(),
           priority: form.priority,
           category: form.category,
           steps_to_reproduce: form.steps_to_reproduce.trim() || null,
@@ -112,13 +109,6 @@ export const EditIssueDialog = ({ issue, onClose, description }: EditIssueDialog
             </div>
           </div>
           <div className="space-y-2">
-            <Label>Description</Label>
-            <Textarea rows={4} maxLength={32000} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-            <p className={`text-xs text-right ${form.description.length >= 32000 ? 'text-destructive' : form.description.length > 28800 ? 'text-amber-500' : 'text-muted-foreground'}`}>
-              {form.description.length >= 32000 ? 'Limit reached — ' : ''}{form.description.length}/32000 characters
-            </p>
-          </div>
-          <div className="space-y-2">
             <Label>Steps to Reproduce</Label>
             <Textarea rows={3} maxLength={32000} value={form.steps_to_reproduce} onChange={(e) => setForm({ ...form, steps_to_reproduce: e.target.value })} />
             <p className={`text-xs text-right ${form.steps_to_reproduce.length >= 32000 ? 'text-destructive' : form.steps_to_reproduce.length > 28800 ? 'text-amber-500' : 'text-muted-foreground'}`}>
@@ -144,7 +134,7 @@ export const EditIssueDialog = ({ issue, onClose, description }: EditIssueDialog
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={isSaving}>Cancel</Button>
-          <Button onClick={save} disabled={isSaving || !form.title.trim() || !form.description.trim()}>
+          <Button onClick={save} disabled={isSaving || !form.title.trim()}>
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Save Changes
           </Button>
