@@ -43,7 +43,6 @@ export interface Issue {
   id: string;
   issue_number: string;
   title: string;
-  description: string;
   priority: IssuePriority;
   status: IssueStatus;
   category: IssueCategory;
